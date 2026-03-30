@@ -1,0 +1,10 @@
+{
+  "name": "revanta-ai-services",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Premium static website for Revanta AI Services.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  }
+}
