@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "description": "Premium static website for Revanta AI Services.",
   "scripts": {
+    "build": "node -e \"console.log('Static site ready')\"",
+    "vercel-build": "npm run build",
     "dev": "node server.js",
     "start": "node server.js"
   }
