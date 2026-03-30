@@ -185,20 +185,20 @@ function updateEstimate() {
   const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
 
   let tier = "Starter";
-  let range = "Custom / Starter";
+  let range = "₹25k - ₹50k";
   let timeline = "2 - 4 weeks";
 
   if (score >= 3 && score <= 4) {
     tier = "Professional";
-    range = "Professional / Custom";
+    range = "₹50k - ₹1L";
     timeline = "3 - 6 weeks";
   } else if (score >= 5 && score <= 7) {
     tier = "Professional+";
-    range = "Professional / Premium";
+    range = "₹1L - ₹2L";
     timeline = "4 - 8 weeks";
   } else if (score >= 8) {
     tier = "Premium";
-    range = "Premium / Custom";
+    range = "₹2L+";
     timeline = "6 - 12 weeks";
   }
 
