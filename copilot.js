@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const source = document.querySelector(".assistant-shell");
   if (!source) return;
 
@@ -30,13 +30,21 @@
     proposal: "Get Proposal"
   };
   const OPENER = {
-    ask: "Tell me what you need, and I’ll map the smartest direction.",
-    estimate: "I’ll assess the scope, complexity, and budget direction.",
-    features: "I’ll help shape the right feature set without overbuilding.",
-    "ai-business": "I’ll identify where AI can save time and add leverage.",
-    mvp: "I’ll help narrow the idea into a launchable MVP.",
-    proposal: "I’ll summarize the project direction and next step."
+    ask: "Tell me what you need, and Iâ€™ll map the smartest direction.",
+    estimate: "Iâ€™ll assess the scope, complexity, and budget direction.",
+    features: "Iâ€™ll help shape the right feature set without overbuilding.",
+    "ai-business": "Iâ€™ll identify where AI can save time and add leverage.",
+    mvp: "Iâ€™ll help narrow the idea into a launchable MVP.",
+    proposal: "Iâ€™ll summarize the project direction and next step."
   };
+  const DISCOVERY_CHIPS = [
+    { label: "I need a website", action: "reply", value: "I need a website" },
+    { label: "I need an app", action: "reply", value: "I need an app" },
+    { label: "I need AI", action: "reply", value: "I need AI" },
+    { label: "I need automation", action: "reply", value: "I need automation" }
+  ];
+  const THINKING_LABEL = "REVIX is analyzing your requirements...";
+  const BRIEF_LABEL = "REVIX is preparing your brief...";
   const INDUSTRIES = [
     ["real estate", ["real estate", "property", "broker", "agent"], "lead capture website, listing portal, WhatsApp follow-up, CRM dashboard", ["AI lead qualification", "property recommendation engine", "enquiry automation"]],
     ["fashion", ["fashion", "clothing", "apparel", "garment", "textile"], "catalog website, wholesale portal, order dashboard, enquiry automation", ["AI enquiry sorting", "catalog assistance", "order update automation"]],
@@ -46,11 +54,11 @@
     ["agency", ["agency", "marketing", "design", "branding", "creative", "studio"], "agency website, client portal, proposal flow, project dashboard", ["AI proposal drafting", "lead scoring", "client update automation"]]
   ].map(([name, words, fit, ai]) => ({ name, words, fit, ai }));
   const PROJECTS = [
-    ["website", ["website", "landing page", "company website", "portfolio", "marketing site"], "premium website / landing page", "3 days to 2 weeks", "₹25k - ₹50k"],
-    ["web app", ["web app", "portal", "dashboard", "crm", "saas", "admin panel"], "web app / dashboard / portal", "2 to 6 weeks", "₹50k - ₹1.5L"],
-    ["mobile app", ["mobile app", "android app", "ios app", "application", "app development"], "Android / iOS app build", "4 to 10 weeks", "₹1L - ₹3L+"],
-    ["ai automation", ["ai automation", "automation", "workflow automation", "agent", "bot", "assistant"], "AI automation system", "1 to 3 weeks", "₹35k - ₹1.5L"],
-    ["fine tuning", ["fine tuning", "finetuning", "model training", "ai model", "llm"], "AI fine-tuning / custom model workflow", "3 to 8 weeks", "₹1.5L - ₹6L+"]
+    ["website", ["website", "landing page", "company website", "portfolio", "marketing site"], "premium website / landing page", "3 days to 2 weeks", "â‚¹25k - â‚¹50k"],
+    ["web app", ["web app", "portal", "dashboard", "crm", "saas", "admin panel"], "web app / dashboard / portal", "2 to 6 weeks", "â‚¹50k - â‚¹1.5L"],
+    ["mobile app", ["mobile app", "android app", "ios app", "application", "app development"], "Android / iOS app build", "4 to 10 weeks", "â‚¹1L - â‚¹3L+"],
+    ["ai automation", ["ai automation", "automation", "workflow automation", "agent", "bot", "assistant"], "AI automation system", "1 to 3 weeks", "â‚¹35k - â‚¹1.5L"],
+    ["fine tuning", ["fine tuning", "finetuning", "model training", "ai model", "llm"], "AI fine-tuning / custom model workflow", "3 to 8 weeks", "â‚¹1.5L - â‚¹6L+"]
   ].map(([name, words, fit, time, price]) => ({ name, words, fit, time, price }));
   const FEATURES = [
     ["website", "Website", ["website", "site", "landing", "pages", "responsive"]],
@@ -81,11 +89,15 @@
           requirement: "",
           projectType: "",
           industry: "",
+          department: "",
+          channel: "",
+          tools: [],
           features: [],
           aiSuggestions: [],
           timeline: "",
           complexity: "",
           summary: "",
+          why: "",
           userMessage: ""
         },
         leadStage: "idle"
@@ -103,11 +115,15 @@
           requirement: s.lead?.requirement || "",
           projectType: s.lead?.projectType || "",
           industry: s.lead?.industry || "",
+          department: s.lead?.department || "",
+          channel: s.lead?.channel || "",
+          tools: Array.isArray(s.lead?.tools) ? s.lead.tools : [],
           features: Array.isArray(s.lead?.features) ? s.lead.features : [],
           aiSuggestions: Array.isArray(s.lead?.aiSuggestions) ? s.lead.aiSuggestions : [],
           timeline: s.lead?.timeline || "",
           complexity: s.lead?.complexity || "",
           summary: s.lead?.summary || "",
+          why: s.lead?.why || "",
           userMessage: s.lead?.userMessage || ""
         },
         leadStage: s.leadStage || "idle"
@@ -125,11 +141,15 @@
           requirement: "",
           projectType: "",
           industry: "",
+          department: "",
+          channel: "",
+          tools: [],
           features: [],
           aiSuggestions: [],
           timeline: "",
           complexity: "",
           summary: "",
+          why: "",
           userMessage: ""
         },
         leadStage: "idle"
@@ -139,7 +159,7 @@
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   }
-  const norm = (v) => (v || "").toLowerCase().replace(/[^a-z0-9₹+\s]/g, " ").replace(/\s+/g, " ").trim();
+  const norm = (v) => (v || "").toLowerCase().replace(/[^a-z0-9â‚¹+\s]/g, " ").replace(/\s+/g, " ").trim();
   const has = (t, list) => list.some((w) => t.includes(w));
   const findIndustry = (text) => {
     const t = norm(text);
@@ -181,7 +201,7 @@
     return n;
   }
   const band = (n) => n < 3.5 ? ["Simple", "lean, fast, and focused"] : n < 6 ? ["Medium", "structured with a few moving parts"] : n < 9 ? ["Advanced", "multi-layer with integrations"] : ["Premium / custom AI", "strategic, multi-system, and tailored"];
-  const price = (n, p) => p?.name === "fine tuning" ? "₹1.5L - ₹6L+" : p?.name === "mobile app" ? (n < 7 ? "₹1L - ₹2.5L" : "₹2L - ₹5L+") : p?.name === "ai automation" ? (n < 5 ? "₹35k - ₹75k" : "₹75k - ₹2L") : p?.name === "web app" ? (n < 6 ? "₹50k - ₹1.5L" : "₹1L - ₹3L+") : p?.name === "mvp" ? (n < 6 ? "₹50k - ₹1.5L" : "₹1L - ₹2.5L+") : n < 3.5 ? "₹25k - ₹50k" : n < 6 ? "₹50k - ₹1L" : n < 9 ? "₹1L - ₹2.5L" : "₹2.5L - ₹6L+";
+  const price = (n, p) => p?.name === "fine tuning" ? "â‚¹1.5L - â‚¹6L+" : p?.name === "mobile app" ? (n < 7 ? "â‚¹1L - â‚¹2.5L" : "â‚¹2L - â‚¹5L+") : p?.name === "ai automation" ? (n < 5 ? "â‚¹35k - â‚¹75k" : "â‚¹75k - â‚¹2L") : p?.name === "web app" ? (n < 6 ? "â‚¹50k - â‚¹1.5L" : "â‚¹1L - â‚¹3L+") : p?.name === "mvp" ? (n < 6 ? "â‚¹50k - â‚¹1.5L" : "â‚¹1L - â‚¹2.5L+") : n < 3.5 ? "â‚¹25k - â‚¹50k" : n < 6 ? "â‚¹50k - â‚¹1L" : n < 9 ? "â‚¹1L - â‚¹2.5L" : "â‚¹2.5L - â‚¹6L+";
   const timeline = (n, p, fc) => p?.name === "fine tuning" ? "3 - 8 weeks" : p?.name === "mobile app" ? "4 - 10 weeks" : p?.name === "ai automation" ? (fc > 4 ? "2 - 5 weeks" : "1 - 3 weeks") : p?.name === "web app" ? (n < 6 ? "2 - 4 weeks" : "4 - 8 weeks") : p?.name === "mvp" ? (n < 6 ? "3 - 6 weeks" : "5 - 10 weeks") : n < 3.5 ? "3 days - 1.5 weeks" : n < 6 ? "1 - 3 weeks" : n < 9 ? "3 - 6 weeks" : "6 - 12+ weeks";
   const fitText = (profile) => profile.project?.fit || profile.industry?.fit || "Smart fit";
   const leadStageOrder = ["name", "email", "company", "requirement", "budget", "notes"];
@@ -195,10 +215,10 @@
   };
   const normalizeBudget = (text) => {
     const t = norm(text);
-    if (has(t, ["under", "50k", "₹50k", "below 50k"])) return "Under ₹50k";
-    if (has(t, ["50k", "1l", "₹50k - ₹1L", "50000", "1 lakh"])) return "₹50k - ₹1L";
-    if (has(t, ["1l", "2l", "₹1L - ₹2L", "100000", "2 lakh"])) return "₹1L - ₹2L";
-    if (has(t, ["2l", "5l", "₹2L+", "premium"])) return "₹2L+";
+    if (has(t, ["under", "50k", "â‚¹50k", "below 50k"])) return "Under â‚¹50k";
+    if (has(t, ["50k", "1l", "â‚¹50k - â‚¹1L", "50000", "1 lakh"])) return "â‚¹50k - â‚¹1L";
+    if (has(t, ["1l", "2l", "â‚¹1L - â‚¹2L", "100000", "2 lakh"])) return "â‚¹1L - â‚¹2L";
+    if (has(t, ["2l", "5l", "â‚¹2L+", "premium"])) return "â‚¹2L+";
     return text.trim();
   };
   const extractEmail = (text) => text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
@@ -256,6 +276,199 @@
     }
     return Array.from(result.values()).map((item) => item.label);
   };
+  const detectWebsiteSubtype = (text) => {
+    const t = norm(text);
+    if (has(t, ["saas", "web app", "dashboard", "portal", "admin"])) return "SaaS / Web App";
+    if (has(t, ["ecommerce", "e-commerce", "store", "shop", "checkout", "cart"])) return "E-commerce";
+    if (has(t, ["portfolio"])) return "Portfolio";
+    if (has(t, ["landing", "landing page"])) return "Landing Page";
+    if (has(t, ["business", "company", "corporate", "brand"])) return "Business Website";
+    return "";
+  };
+  const detectGoal = (text) => {
+    const t = norm(text);
+    if (has(t, ["lead", "inquiry", "enquiry", "contact", "booking", "bookings"])) return "Lead generation / enquiries";
+    if (has(t, ["sell", "sales", "checkout", "orders"])) return "Sales / conversions";
+    if (has(t, ["showcase", "credibility", "brand", "portfolio"])) return "Brand presence / credibility";
+    if (has(t, ["dashboard", "internal", "operations", "workflow"])) return "Dashboard / internal workflow";
+    if (has(t, ["support", "faq", "ticket"])) return "Support / operations";
+    if (has(t, ["subscription", "subscriptions"])) return "Revenue / subscriptions";
+    return "";
+  };
+  const detectAppPlatform = (text) => {
+    const t = norm(text);
+    if (has(t, ["both", "android and ios", "ios and android"])) return "Both Platforms";
+    if (has(t, ["android"])) return "Android App";
+    if (has(t, ["iphone", "ios"])) return "iPhone App";
+    return "";
+  };
+  const detectAppAudience = (text) => {
+    const t = norm(text);
+    if (has(t, ["internal", "staff", "team", "operations"])) return "Internal Team";
+    if (has(t, ["field", "sales rep", "field team"])) return "Field Team";
+    if (has(t, ["partner", "vendors"])) return "Partners";
+    if (has(t, ["customer", "customers", "client", "clients"])) return "Customers";
+    return "";
+  };
+  const detectAIType = (text) => {
+    const t = norm(text);
+    if (has(t, ["fine tuning", "finetuning", "model"])) return "Fine-Tuning";
+    if (has(t, ["support", "help desk", "ticket", "customer service"])) return "AI Support Assistant";
+    if (has(t, ["workflow", "automation", "trigger", "process"])) return "AI Automation";
+    if (has(t, ["chatbot", "chat bot", "assistant"])) return "AI Chatbot";
+    if (has(t, ["internal tool"])) return "Internal Tool";
+    return "";
+  };
+  const detectAIBusiness = (text) => {
+    const industry = findIndustry(text);
+    if (industry) return industry.name;
+    const t = norm(text);
+    if (has(t, ["sales"])) return "Sales";
+    if (has(t, ["support"])) return "Support";
+    if (has(t, ["operations", "ops"])) return "Operations";
+    if (has(t, ["lead"])) return "Lead Generation";
+    if (has(t, ["ecommerce", "e-commerce", "store"])) return "E-commerce";
+    return "";
+  };
+  const detectAIProcess = (text) => {
+    const t = norm(text);
+    if (has(t, ["answering questions", "faq", "questions"])) return "Answering questions";
+    if (has(t, ["lead", "crm", "enquiry", "inquiry"])) return "Managing leads";
+    if (has(t, ["follow up", "follow-up", "reminder"])) return "Follow-ups";
+    if (has(t, ["report", "reporting", "analytics"])) return "Reporting";
+    if (has(t, ["onboarding"])) return "Onboarding";
+    if (has(t, ["task", "routing", "assignment"])) return "Task routing";
+    return "";
+  };
+  const detectAIDepartment = (text) => {
+    const t = norm(text);
+    if (has(t, ["sales"])) return "Sales";
+    if (has(t, ["support", "customer success"])) return "Support";
+    if (has(t, ["operations", "ops"])) return "Operations";
+    if (has(t, ["lead"])) return "Lead Generation";
+    return "";
+  };
+  const detectAutomationManual = (text) => {
+    const t = norm(text);
+    if (has(t, ["lead", "follow up", "follow-up"])) return "Lead follow-ups";
+    if (has(t, ["whatsapp"])) return "WhatsApp replies";
+    if (has(t, ["support"])) return "Support routing";
+    if (has(t, ["update", "internal"])) return "Internal updates";
+    if (has(t, ["data entry", "entry"])) return "Data entry";
+    if (has(t, ["report"])) return "Reporting";
+    return "";
+  };
+  const detectAutomationChannel = (text) => {
+    const t = norm(text);
+    if (has(t, ["whatsapp"])) return "WhatsApp";
+    if (has(t, ["email"])) return "Email";
+    if (has(t, ["crm"])) return "CRM";
+    if (has(t, ["google sheets", "sheets"])) return "Google Sheets";
+    if (has(t, ["website form", "forms"])) return "Website forms";
+    if (has(t, ["workflow", "internal"])) return "Internal workflow";
+    return "";
+  };
+  const detectAutomationTools = (text) => {
+    const t = norm(text);
+    const tools = [];
+    if (has(t, ["google sheets", "sheets"])) tools.push("Google Sheets");
+    if (has(t, ["whatsapp"])) tools.push("WhatsApp");
+    if (has(t, ["hubspot"])) tools.push("HubSpot");
+    if (has(t, ["zoho"])) tools.push("Zoho");
+    if (has(t, ["notion"])) tools.push("Notion");
+    if (has(t, ["excel"])) tools.push("Excel");
+    if (has(t, ["crm"])) tools.push("CRM");
+    return Array.from(new Set(tools));
+  };
+  const detectBroadIntent = (text) => {
+    const t = norm(text);
+    if (has(t, ["website", "landing page", "portfolio", "web app", "dashboard", "portal", "ecommerce", "e-commerce", "store", "shop"])) return "website";
+    if (has(t, ["app", "android", "iphone", "ios", "mobile"])) return "mobile app";
+    if (has(t, ["fine tuning", "finetuning", "model"])) return "fine tuning";
+    if (has(t, ["ai", "chatbot", "assistant", "llm"])) return "ai automation";
+    if (has(t, ["automation", "workflow", "automate", "trigger", "zapier", "make"])) return "automation";
+    return "";
+  };
+  const discoveryQuestion = (field) => ({
+    websiteSubtype: "What type of website are you looking to build?",
+    websiteGoal: "What is the main goal of the website?",
+    websiteFeatures: "Do you need any of these inside it?",
+    appPlatform: "Is this for Android, iPhone, or both?",
+    appAudience: "Is it for customers or internal business use?",
+    appFeatures: "Which capabilities matter most?",
+    aiType: "What kind of AI are you looking to build?",
+    aiBusiness: "What business are you in?",
+    aiProcess: "What process are you trying to improve?",
+    aiDepartment: "Is this mainly for sales, support, operations, or lead generation?",
+    autoManual: "What are you currently doing manually?",
+    autoChannel: "Where does this process live today?",
+    autoTools: "What tools are you currently using?"
+  }[field] || "Tell me a bit more about the project.");
+  const progressText = () => {
+    const step = state.leadStage;
+    if (step === "intro") return "Step 1 of 5 - Understanding your project";
+    if (step === "websiteSubtype" || step === "appPlatform" || step === "aiType" || step === "autoManual") return "Step 2 of 5 - Clarifying the project type";
+    if (step === "websiteGoal" || step === "appAudience" || step === "aiBusiness" || step === "autoChannel") return "Step 3 of 5 - Understanding the business goal";
+    if (step === "websiteFeatures" || step === "appFeatures" || step === "aiProcess" || step === "autoTools") return "Step 4 of 5 - Capturing key requirements";
+    if (step === "aiDepartment") return "Step 4 of 5 - Confirming the team focus";
+    if (step === "review") return "Step 5 of 5 - Reviewing the brief";
+    if (step === "sent") return "Done - Brief sent";
+    return "";
+  };
+  const buildWhyDirection = (brief) => {
+    const direction = (brief.projectType || brief.requirement || "").toLowerCase();
+    const features = (brief.features || []).map((item) => item.toLowerCase());
+    const company = (brief.company || brief.industry || "").toLowerCase();
+    if (direction.includes("website") && (features.some((item) => item.includes("admin")) || features.some((item) => item.includes("dashboard")) || features.some((item) => item.includes("login")))) {
+      return "Because you need accounts, admin control, and workflow visibility, this looks more like a structured business system than a simple brochure website.";
+    }
+    if (direction.includes("website") && (features.some((item) => item.includes("lead")) || features.some((item) => item.includes("enquiry")) || features.some((item) => item.includes("form")))) {
+      return "Because your main goal is lead capture and business visibility, a focused business website is likely the smarter first step.";
+    }
+    if ((direction.includes("app") || direction.includes("mobile")) && (features.some((item) => item.includes("login")) || features.some((item) => item.includes("admin")) || features.some((item) => item.includes("subscription")))) {
+      return "Because this needs user access, control layers, and dashboard logic, it likely belongs in a web app or product-style build.";
+    }
+    if (direction.includes("ai") || features.some((item) => item.includes("ai"))) {
+      return "Because the value is in automating a workflow or improving response quality, the AI layer should be designed around the process first, not as a generic add-on.";
+    }
+    if (direction.includes("automation") || features.some((item) => item.includes("automation"))) {
+      return "Because you are replacing manual work with a guided workflow, the best result is usually a focused automation system with clear triggers and handoff rules.";
+    }
+    if (company.includes("startup") || company.includes("idea") || company.includes("mvp")) {
+      return "Because this is still idea-stage and speed matters, an MVP approach is likely better than building the full platform immediately.";
+    }
+    return "Based on the scope, this direction gives you the highest chance of solving the core business problem without overbuilding the first version.";
+  };
+  const buildWhatsAppMessage = (brief) => {
+    const lines = [
+      "Hi Revanta, I want to discuss a project brief.",
+      "",
+      `Name: ${brief.name || "Not specified"}`,
+      `Company: ${brief.company || "Not specified"}`,
+      `Email: ${brief.email || "Not specified"}`,
+      `Business Type: ${brief.industry || "Not specified"}`,
+      `Project Direction: ${brief.projectType || brief.requirement || "Not specified"}`,
+      `Main Requirements: ${brief.features?.length ? brief.features.join(", ") : "Not specified"}`,
+      `Budget Direction: ${brief.budget || "Not specified"}`,
+      `Timeline: ${brief.timeline || "Not specified"}`,
+      `Why This Direction: ${brief.why || buildWhyDirection(brief)}`,
+      `AI Opportunities: ${brief.aiSuggestions?.length ? brief.aiSuggestions.join(", ") : "Not specified"}`
+    ];
+    return lines.join("\n");
+  };
+  const buildWhatsAppUrl = (brief) => `https://wa.me/919014719422?text=${encodeURIComponent(buildWhatsAppMessage(brief))}`;
+  const discoveryCards = () => {
+    const currentIntent = state.profile.project?.name || "discovery";
+    const cards = [
+      { label: "Current read", value: currentIntent === "discovery" ? "Discovery" : currentIntent.toUpperCase(), detail: "Iâ€™m narrowing the scope." },
+      { label: "Role", value: "Solution architect", detail: "Discovery-first guidance." },
+      { label: "Output", value: "Scope + direction", detail: "Then budget and timeline." }
+    ];
+    if (state.profile.industry) {
+      cards.unshift({ label: "Business", value: state.profile.industry.name, detail: "Used for context." });
+    }
+    return cards.slice(0, 3);
+  };
   const buildLeadSummary = (lead) => [
     "Project Summary:",
     "",
@@ -279,6 +492,9 @@
     "",
     "Estimated Timeline:",
     lead.timeline || "Not specified",
+    "",
+    "Why This Direction:",
+    lead.why || "Not specified",
     "",
     "Additional Notes:",
     lead.userMessage || lead.summary || "Not specified"
@@ -304,13 +520,59 @@
     }
 
     const project = findProject(t) || state.profile.project;
-    if (project && !lead.projectType) lead.projectType = project.fit;
-    const req = extractRequirement(t);
-    if (req && !lead.requirement) lead.requirement = req;
+    if (project) {
+      if (project.name === "website") {
+        const subtype = detectWebsiteSubtype(t);
+        if (subtype || !lead.projectType || lead.projectType === "Website") {
+          lead.projectType = subtype || "Website";
+        }
+      } else if (project.name === "mobile app") {
+        const platform = detectAppPlatform(t);
+        if (platform || !lead.projectType || lead.projectType === "Mobile App") {
+          lead.projectType = platform || "Mobile App";
+        }
+      } else if (project.name === "ai automation") {
+        const aiType = detectAIType(t);
+        if (aiType || !lead.projectType || lead.projectType === "AI Automation") {
+          lead.projectType = aiType || "AI Automation";
+        }
+      } else if (project.name === "fine tuning") {
+        lead.projectType = "Fine-Tuning";
+      } else if (!lead.projectType) {
+        lead.projectType = project.fit;
+      }
+    }
+    if (!lead.requirement) {
+      if (project?.name === "mobile app") {
+        lead.requirement = detectAppAudience(t) || detectGoal(t);
+      } else if (project?.name === "ai automation" || project?.name === "fine tuning") {
+        lead.requirement = detectAIProcess(t) || detectGoal(t);
+      } else if (project?.name === "automation") {
+        lead.requirement = detectAutomationManual(t) || detectGoal(t);
+      } else {
+        lead.requirement = detectGoal(t);
+      }
+    }
     const budget = normalizeBudget(t);
-    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "₹"])) lead.budget = budget;
+    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "â‚¹"])) lead.budget = budget;
     const industry = findIndustry(t) || state.profile.industry;
-    if (industry && !lead.industry) lead.industry = industry.name;
+    if (!lead.industry) {
+      if (project?.name === "ai automation" || project?.name === "fine tuning") {
+        lead.industry = detectAIBusiness(t) || industry?.name || "";
+      } else if (industry) {
+        lead.industry = industry.name;
+      }
+    }
+    if (project?.name === "ai automation" || project?.name === "fine tuning") {
+      const department = detectAIDepartment(t);
+      if (department) lead.department = department;
+    }
+    if (project?.name === "automation") {
+      const channel = detectAutomationChannel(t);
+      if (channel) lead.channel = channel;
+      const tools = detectAutomationTools(t);
+      if (tools.length) lead.tools = Array.from(new Set([...(lead.tools || []), ...tools]));
+    }
     lead.features = Array.from(new Set([...(lead.features || []), ...featureScope(state.profile, t)]));
     lead.aiSuggestions = Array.from(new Set([...(lead.aiSuggestions || []), ...aiIdeas(industry, t)]));
     lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
@@ -330,6 +592,13 @@
       complexity: lead.complexity || band(complexityScore(state.profile, lead.userMessage || ""))[0],
       budget: lead.budget,
       timeline: timelineValue,
+      why: lead.why || buildWhyDirection({
+        projectType,
+        requirement: lead.requirement,
+        features: lead.features.length ? lead.features : featureScope(state.profile, lead.userMessage || ""),
+        company: lead.company,
+        industry: lead.industry || state.profile.industry?.name
+      }),
       userMessage: lead.userMessage || "",
       industry: lead.industry || state.profile.industry?.name
     });
@@ -345,50 +614,66 @@
       aiSuggestions,
       complexity: lead.complexity || band(complexityScore(state.profile, lead.userMessage || ""))[0],
       timeline: timelineValue,
+      why: lead.why || buildWhyDirection({
+        projectType,
+        requirement: lead.requirement,
+        features: lead.features.length ? lead.features : featureScope(state.profile, lead.userMessage || ""),
+        company: lead.company,
+        industry: lead.industry || state.profile.industry?.name
+      }),
       summary
     };
   };
-  const writeLead = (partial) => {
-    state.lead = { ...state.lead, ...partial };
-    state.lead.summary = buildLeadSummary(getLeadPreview());
-    save();
-  };
   const leadPrompt = (field) => ({
-    kicker: "Project brief",
+    kicker: progressText() || "Discovery",
     tag: "REVIX",
-    title: "Let’s build your brief",
-    text: leadQuestions[field],
-    cards: leadCards(state.lead),
-    followUp: "You can answer in one line. REVIX will map the details for you."
+    title: "Letâ€™s scope this properly",
+    text: discoveryQuestion(field),
+    cards: discoveryCards(),
+    followUp: "Pick the closest option and Iâ€™ll narrow the next question."
   });
   const leadReview = () => {
     const brief = getLeadPreview();
+    const projectDirection = brief.projectType || brief.requirement || "Custom digital build";
+    const likelyNeeds = brief.features?.length ? brief.features.slice(0, 5) : [];
+    const why = brief.why || buildWhyDirection(brief);
+    const whatsappUrl = buildWhatsAppUrl({ ...brief, why });
+    state.lead.why = why;
+    state.lead.summary = buildLeadSummary({ ...brief, why });
+    save();
     return {
-      kicker: "Project brief ready",
+      kicker: progressText() || "Project direction ready",
       tag: "REVIX",
-      title: "Your Project Brief is Ready",
-      text: "I’ve organized everything into a clean brief. Review it below, then send it to our team.",
+      title: "Your project brief is ready",
+      text: "I’ve organized the discovery into a cleaner consultant-style brief. Review the direction below before you hand anything off to the team.",
       cards: [
-        { label: "Name", value: brief.name || "Pending", detail: brief.email || "Email needed" },
-        { label: "Company", value: brief.company || "Pending", detail: brief.budget || "Budget needed" },
-        { label: "Requirement", value: brief.requirement || "Pending", detail: brief.projectType || "Project type inferred" }
+        { label: "Project Direction", value: projectDirection, detail: brief.industry || brief.company || "Discovery complete" },
+        { label: "Likely Needs", value: likelyNeeds.length ? likelyNeeds.join(" + ") : "Discovery captured", detail: brief.aiSuggestions?.length ? brief.aiSuggestions.slice(0, 3).join(", ") : "Priority items" },
+        { label: "Estimated Complexity", value: brief.complexity || "Medium", detail: brief.timeline || "Timeline estimate" },
+        { label: "Indicative Budget", value: brief.budget || "Not specified", detail: "Direction, not a hard quote." }
       ],
       bullets: [
-        `Feature summary: ${brief.features.length ? brief.features.join(", ") : "Not specified"}`,
-        `AI suggestions: ${brief.aiSuggestions.length ? brief.aiSuggestions.join(", ") : "Not specified"}`,
-        `Timeline: ${brief.timeline}`,
-        `Complexity: ${brief.complexity}`
+        `Why this direction: ${why}`,
+        `Estimated timeline: ${brief.timeline || "Not specified"}`,
+        `AI / automation opportunities: ${brief.aiSuggestions.length ? brief.aiSuggestions.slice(0, 3).join(", ") : "Not specified"}`
+      ],
+      why,
+      chips: [
+        { label: "Send brief on WhatsApp", action: "url", value: whatsappUrl },
+        { label: "Edit details", action: "edit", value: "edit" },
+        { label: "Open contact form", action: "section", value: "contact" }
       ],
       ctas: [
-        { label: "Send to Our Team", action: "send", href: "#", value: "send", target: "action", variant: "btn-primary" },
-        { label: "Edit Details", action: "edit", href: "#", value: "edit", target: "action", variant: "btn-secondary" },
-        { label: "Send on WhatsApp", href: "https://wa.me/919014719422?text=Hi%20Revanta%2C%20I%20have%20a%20project%20brief.", target: "url", variant: "btn-secondary" }
+        { label: "Send This Project Brief to Our Team", action: "send", href: "#", value: "send", target: "action", variant: "btn-primary" },
+        { label: "Send on WhatsApp", href: whatsappUrl, target: "url", variant: "btn-secondary" },
+        { label: "Edit Details", action: "edit", href: "#", value: "edit", target: "action", variant: "btn-secondary" }
       ],
-      followUp: "REVIX has prepared your project brief."
+      followUp: "You can send it now, share it on WhatsApp, or refine one more detail before we lock it in."
     };
   };
   const leadPayloadForEmail = () => {
     const brief = getLeadPreview();
+    const why = brief.why || buildWhyDirection(brief);
     return {
       name: brief.name,
       email: brief.email,
@@ -401,8 +686,9 @@
       aiSuggestions: brief.aiSuggestions,
       complexity: brief.complexity,
       timeline: brief.timeline,
+      why,
       additionalNotes: state.lead.userMessage || "",
-      message: brief.summary
+      message: buildLeadSummary({ ...brief, why })
     };
   };
   const sendBotLead = async () => {
@@ -412,32 +698,165 @@
     const result = await window.revantaQuoteBridge.sendLeadViaEmailJS(leadPayloadForEmail());
     return result;
   };
+  const handleAssistantControl = (action) => {
+    if (action === "send") {
+      return sendBotLead()
+        .then(() => {
+          state.leadStage = "sent";
+          save();
+          render("bot", {
+            kicker: "REVIX",
+            tag: "EmailJS",
+            title: "Brief sent to our team",
+            text: "Your structured project brief has been delivered to our team. We’ll review the scope and get back to you with the next step.",
+            cards: [
+              { label: "Status", value: "Sent", detail: "Delivered through the existing EmailJS flow." },
+              { label: "Next", value: "Review", detail: "Our team will check the brief." },
+              { label: "Follow-up", value: "Reply-ready", detail: "You can keep refining it here." }
+            ],
+            followUp: "You can still use REVIX to refine the brief."
+          });
+          setQuickReplies([
+            { label: "Refine brief", action: "reply", value: "I want to edit the brief" },
+            { label: "Open contact", action: "section", value: "contact" }
+          ]);
+          updateInsights(state.profile, "Sent", "Reply-ready");
+        })
+        .catch((error) => {
+          render("bot", {
+            kicker: "REVIX",
+            tag: "EmailJS",
+            title: "Failed to send",
+            text: error?.text || error?.message || "Please try again.",
+            cards: [
+              { label: "Check", value: "EmailJS", detail: "Make sure the bridge and template are active." },
+              { label: "Fallback", value: "Edit brief", detail: "You can revise details and resend." }
+            ]
+          });
+          setQuickReplies([
+            { label: "Open contact", action: "section", value: "contact" },
+            { label: "Try again", action: "reply", value: "send to our team" }
+          ]);
+          updateInsights(state.profile, "Discovery", "Try sending again");
+        });
+    }
+
+    if (action === "edit") {
+      const brief = getLeadPreview();
+      state.leadStage = "edit";
+      save();
+      updateInsights(state.profile, "Discovery", "Refine the brief");
+      render("bot", {
+        kicker: progressText() || "REVIX",
+        tag: "Refine",
+        title: "What would you like to change?",
+        text: "You do not need to start over. Tell me the part you want to refine and I will keep the rest of the brief intact.",
+        cards: [
+          { label: "Current direction", value: brief.projectType || "Pending", detail: "We can refine this first." },
+          { label: "Current budget", value: brief.budget || "Pending", detail: "You can adjust the range." },
+          { label: "Current timeline", value: brief.timeline || "Pending", detail: "We can tighten or expand it." }
+        ],
+        chips: [
+          { label: "Project type", action: "reply", value: "I want to refine the project type" },
+          { label: "Requirements", action: "reply", value: "I want to refine the requirements" },
+          { label: "Budget", action: "reply", value: "I want to refine the budget" },
+          { label: "Timeline", action: "reply", value: "I want to refine the timeline" }
+        ],
+        followUp: "Reply with the change you want and I’ll update the brief without clearing everything."
+      });
+      return Promise.resolve();
+    }
+
+    return Promise.resolve();
+  };
   const leadBranch = (text) => {
     const lead = syncLeadFromText(text);
-    if (!lead.name) {
-      state.leadStage = "name";
+    const project = state.profile.project || findProject(text);
+    const broad = detectBroadIntent(text) || project?.name || "";
+    if (!broad) {
+      state.leadStage = "intro";
       save();
-      return leadPrompt("name");
+      return {
+        kicker: "Discovery",
+        tag: "REVIX",
+        title: "Let’s map the build direction",
+        text: "Before I estimate anything, I need to understand what kind of build you’re planning. Tell me the project type, and I’ll start with the right follow-up question.",
+        cards: discoveryCards(),
+        chips: DISCOVERY_CHIPS
+      };
     }
-    if (!lead.email) {
-      state.leadStage = "email";
-      save();
-      return leadPrompt("email");
+    if (broad === "website") {
+      if (!lead.projectType || lead.projectType === "Website") {
+        state.leadStage = "websiteSubtype";
+        save();
+        return leadPrompt("websiteSubtype");
+      }
+      if (!lead.requirement) {
+        state.leadStage = "websiteGoal";
+        save();
+        return leadPrompt("websiteGoal");
+      }
+      if (!(lead.features || []).length) {
+        state.leadStage = "websiteFeatures";
+        save();
+        return leadPrompt("websiteFeatures");
+      }
     }
-    if (!lead.company) {
-      state.leadStage = "company";
-      save();
-      return leadPrompt("company");
+    if (broad === "mobile app") {
+      if (!lead.projectType || lead.projectType === "Mobile App") {
+        state.leadStage = "appPlatform";
+        save();
+        return leadPrompt("appPlatform");
+      }
+      if (!lead.requirement) {
+        state.leadStage = "appAudience";
+        save();
+        return leadPrompt("appAudience");
+      }
+      if (!(lead.features || []).length) {
+        state.leadStage = "appFeatures";
+        save();
+        return leadPrompt("appFeatures");
+      }
     }
-    if (!lead.requirement) {
-      state.leadStage = "requirement";
-      save();
-      return leadPrompt("requirement");
+    if (broad === "ai automation" || broad === "fine tuning") {
+      if (!lead.projectType || lead.projectType === "AI Automation" || lead.projectType === "Fine-Tuning") {
+        state.leadStage = "aiType";
+        save();
+        return leadPrompt("aiType");
+      }
+      if (!lead.industry) {
+        state.leadStage = "aiBusiness";
+        save();
+        return leadPrompt("aiBusiness");
+      }
+      if (!lead.requirement) {
+        state.leadStage = "aiProcess";
+        save();
+        return leadPrompt("aiProcess");
+      }
+      if (!lead.department) {
+        state.leadStage = "aiDepartment";
+        save();
+        return leadPrompt("aiDepartment");
+      }
     }
-    if (!lead.budget) {
-      state.leadStage = "budget";
-      save();
-      return leadPrompt("budget");
+    if (broad === "automation") {
+      if (!lead.requirement) {
+        state.leadStage = "autoManual";
+        save();
+        return leadPrompt("autoManual");
+      }
+      if (!lead.channel) {
+        state.leadStage = "autoChannel";
+        save();
+        return leadPrompt("autoChannel");
+      }
+      if (!(lead.tools || []).length) {
+        state.leadStage = "autoTools";
+        save();
+        return leadPrompt("autoTools");
+      }
     }
 
     lead.timeline = lead.timeline || timeline(complexityScore(state.profile, text), state.profile.project, lead.features.length || state.profile.features.length);
@@ -461,13 +880,13 @@
     if (next) next.textContent = nextStep;
   };
   const clearTyping = () => { if (typing?.parentNode) typing.parentNode.removeChild(typing); typing = null; };
-  const showTyping = () => {
+  const showTyping = (label) => {
     clearTyping();
     const row = document.createElement("article");
     row.className = "assistant-message bot";
     const bubble = document.createElement("div");
     bubble.className = "assistant-response glass-card assistant-typing";
-    bubble.innerHTML = '<span class="assistant-typing-dot"></span><span class="assistant-typing-dot"></span><span class="assistant-typing-dot"></span>';
+    bubble.innerHTML = `<span class="assistant-typing-label">${label || "REVIX is analyzing your requirements..."}</span><div class="assistant-typing-dots"><span class="assistant-typing-dot"></span><span class="assistant-typing-dot"></span><span class="assistant-typing-dot"></span></div>`;
     row.appendChild(bubble);
     messages.appendChild(row);
     messages.scrollTop = messages.scrollHeight;
@@ -504,6 +923,17 @@
       payload.bullets.forEach((x) => { const li = document.createElement("li"); li.textContent = x; list.appendChild(li); });
       bubble.appendChild(list);
     }
+    if (payload.why) {
+      const why = document.createElement("div");
+      why.className = "assistant-why";
+      const whyLabel = document.createElement("span");
+      whyLabel.className = "assistant-why-label";
+      whyLabel.textContent = "Why this direction";
+      const whyText = document.createElement("p");
+      whyText.textContent = payload.why;
+      why.append(whyLabel, whyText);
+      bubble.appendChild(why);
+    }
     if (payload.followUp) {
       const p = document.createElement("p");
       p.className = "assistant-follow-up";
@@ -519,39 +949,22 @@
         b.className = "assistant-chip assistant-chip-soft";
         b.textContent = x.label;
         b.addEventListener("click", () => {
-          if (x.action === "mode") { state.mode = x.value in MODE ? x.value : "ask"; modes.forEach((m) => m.classList.toggle("is-active", m.dataset.mode === state.mode)); save(); sendPrompt(x.prompt || x.label, true); }
-          else if (x.action === "section") scrollToSection(x.value);
-          else if (x.action === "url") window.open(x.value, "_blank", "noopener,noreferrer");
-          else if (x.action === "edit") { state.leadStage = "name"; save(); sendPrompt("I want to edit the brief.", true); }
-          else if (x.action === "send") sendBotLead()
-            .then(() => {
-              render("bot", {
-                kicker: "REVIX",
-                tag: "EmailJS",
-                title: "Project brief sent successfully",
-                text: "Your project brief has been delivered to our team. We’ll review it and get back to you with the next step.",
-                cards: [
-                  { label: "Status", value: "Sent", detail: "Delivered through the same EmailJS flow." },
-                  { label: "Next", value: "Review", detail: "Our team will check the brief." },
-                  { label: "Follow-up", value: "Reply-ready", detail: "You can keep using REVIX for edits." }
-                ]
-              });
-              state.leadStage = "idle";
-              save();
-            })
-            .catch((error) => {
-              render("bot", {
-                kicker: "REVIX",
-                tag: "EmailJS",
-                title: "Failed to send",
-                text: error?.text || error?.message || "Please try again.",
-                cards: [
-                  { label: "Check", value: "EmailJS", detail: "Make sure the bridge and template are active." },
-                  { label: "Fallback", value: "Edit brief", detail: "You can revise details and resend." }
-                ]
-              });
-            });
-          else sendPrompt(x.value, true);
+          if (x.action === "mode") {
+            state.mode = x.value in MODE ? x.value : "ask";
+            modes.forEach((m) => m.classList.toggle("is-active", m.dataset.mode === state.mode));
+            save();
+            sendPrompt(x.prompt || x.label, true);
+          } else if (x.action === "section") {
+            scrollToSection(x.value);
+          } else if (x.action === "url") {
+            window.open(x.value, "_blank", "noopener,noreferrer");
+          } else if (x.action === "edit") {
+            handleAssistantControl("edit");
+          } else if (x.action === "send") {
+            handleAssistantControl("send");
+          } else {
+            sendPrompt(x.value, true);
+          }
         });
         row.appendChild(b);
       });
@@ -561,6 +974,19 @@
       const row = document.createElement("div");
       row.className = "assistant-cta-row";
       payload.ctas.forEach((x) => {
+        if (x.kind === "button" || x.target === "action" || x.action === "send" || x.action === "edit") {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `btn ${x.variant || "btn-secondary"} assistant-cta`;
+          button.textContent = x.label;
+          button.addEventListener("click", () => {
+            if (x.action === "send") handleAssistantControl("send");
+            else if (x.action === "edit") handleAssistantControl("edit");
+          });
+          row.appendChild(button);
+          return;
+        }
+
         const a = document.createElement("a");
         a.className = `btn ${x.variant || "btn-secondary"} assistant-cta`;
         a.href = x.href || "#";
@@ -575,23 +1001,9 @@
     messages.appendChild(row);
     messages.scrollTop = messages.scrollHeight;
   };
-  const open = () => {
-    panel.classList.add("is-open");
-    panel.setAttribute("aria-hidden", "false");
-    launcher.setAttribute("aria-expanded", "true");
-    panel.classList.toggle("is-minimized", !!state.minimized);
-    if (!opened) {
-      opened = true;
-      render("bot", { kicker: "REVIX", tag: "AI Business Copilot", title: "Hi, I’m REVIX", text: "I can help you scope a website, web app, mobile app, AI automation, MVP, or custom software build. Tell me what you are trying to achieve and I’ll map the smartest direction.", cards: [{ label: "What I do", value: "Analyze scope", detail: "Recommend the right build path." }, { label: "How I help", value: "Estimate", detail: "Give realistic price and timeline direction." }, { label: "Best next step", value: "Quote / contact", detail: "Push toward the right CTA at the right time." }], chips: [{ label: "Estimate Cost", action: "mode", value: "estimate", prompt: "Estimate the cost for my project." }, { label: "AI for My Business", action: "mode", value: "ai-business", prompt: "Where can AI help my business?" }, { label: "Build My MVP", action: "mode", value: "mvp", prompt: "Help me plan an MVP." }] });
-      updateInsights(state.profile, "Ready", "Start discovery");
-    }
-  };
-  const close = () => { panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", "true"); launcher.setAttribute("aria-expanded", "false"); };
-  const toggleMinimize = () => { state.minimized = !state.minimized; panel.classList.toggle("is-minimized", state.minimized); if (minimizeBtn) minimizeBtn.textContent = state.minimized ? "Restore" : "Minimize"; save(); };
   const sendPrompt = (text, auto) => { input.value = text; if (auto) submit(text); };
   const build = (text) => {
     const t = norm(text);
-    const it = intent(text);
     const industry = findIndustry(text) || state.profile.industry || null;
     const project = findProject(text) || state.profile.project || null;
     const feat = new Map(state.profile.features.map((x) => [x.key, x]));
@@ -599,104 +1011,99 @@
     state.profile.features = Array.from(feat.values());
     if (industry) state.profile.industry = industry;
     if (project) state.profile.project = project;
-    const sc = complexityScore(state.profile, text);
-    const [lvl, tone] = band(sc);
-    const p = price(sc, state.profile.project);
-    const tm = timeline(sc, state.profile.project, state.profile.features.length);
-    const scope = [...new Set([...state.profile.features.map((x) => x.label), ...findFeatures(text).map((x) => x.label)])];
-    const ai = industry ? industry.ai : ["AI lead qualification", "AI workflow automation", "AI support assistant"];
-    const projectFit = state.profile.project?.fit || "custom website / web app";
-    const industryFit = industry?.fit || "a solution matched to your workflow";
-    let out = { kicker: industry ? `${industry.name} business` : "Strategic response", tag: MODE[state.mode], title: "Recommendation", text: "", bullets: [], cards: [], chips: [], ctas: [], followUp: "" };
-    const pricingIntent = state.mode === "estimate" || it === "pricing" || has(t, ["price", "budget", "cost", "quote", "estimate"]);
-    const featureIntent = state.mode === "features" || has(t, ["feature", "features", "login", "payments", "admin", "roles"]);
-    const aiIntent = state.mode === "ai-business" || it === "ai" || has(t, ["ai for my business", "where can ai help", "ai opportunities"]);
-    const mvpIntent = state.mode === "mvp" || it === "mvp" || has(t, ["mvp", "startup", "idea", "launch"]);
-    const proposalIntent = state.mode === "proposal" || has(t, ["proposal", "contact", "quote", "start", "build it"]);
-    const leadFlowActive = state.mode === "proposal" || state.leadStage !== "idle" || has(t, ["send to our team", "project brief", "quote", "brief"]);
+
+    const broadIntent = detectBroadIntent(text);
+    const serviceQuery = has(t, ["service", "services", "what do you do", "what can you do"]);
+    const leadFlowActive = !!(broadIntent || project || state.mode !== "ask" || state.leadStage !== "idle");
+
     if (leadFlowActive) {
       const brief = leadBranch(text);
+      updateInsights(
+        state.profile,
+        state.leadStage === "review" ? band(complexityScore(state.profile, text))[0] : "Discovery",
+        state.leadStage === "review" ? "Send to team" : "Continue discovery"
+      );
       if (state.leadStage === "sent") {
-        brief.kicker = "REVIX";
-        brief.tag = "EmailJS";
-        brief.title = "Project brief sent successfully";
-        brief.text = "Your project brief has been delivered to our team. We’ll review it and get back to you with the next step.";
-        brief.cards = [
-          { label: "Status", value: "Sent", detail: "Delivered through the same EmailJS flow." },
-          { label: "Next", value: "Review", detail: "Our team will check the brief." },
-          { label: "Follow-up", value: "Reply-ready", detail: "You can keep using REVIX for edits." }
-        ];
+        return {
+          kicker: "REVIX",
+          tag: "EmailJS",
+          title: "Project brief sent successfully",
+          text: "Your project brief has been delivered to our team. We’ll review it and get back to you with the next step.",
+          cards: [
+            { label: "Status", value: "Sent", detail: "Delivered through the existing EmailJS flow." },
+            { label: "Next", value: "Review", detail: "Our team will check the brief." },
+            { label: "Follow-up", value: "Reply-ready", detail: "You can keep refining it here." }
+          ],
+          followUp: "You can still use REVIX to refine the brief."
+        };
       }
       return brief;
     }
-    if (state.mode === "ask" && !state.profile.project && !state.profile.industry) {
-      out.title = "Let’s map the build direction";
-      out.text = "Tell me the business you run or the product you want to build, and I’ll recommend the right stack, scope, and next step.";
-      out.bullets = ["I can analyze websites, apps, AI workflows, MVPs, and software systems.", "I’ll keep the answer strategic, not generic.", "You can keep it short and I’ll infer the likely direction."];
-      out.followUp = "What are you trying to build or improve?";
-      out.cards = [{ label: "Role", value: "Solution architect", detail: "I’ll narrow the build direction." }, { label: "Output", value: "Scope + pricing + timeline", detail: "Enough to guide a proper quote." }, { label: "Mode", value: MODE.ask, detail: "Discovery-first conversation." }];
-    } else if (pricingIntent) {
-      out.title = "Pricing direction";
-      out.text = `This looks like a ${lvl.toLowerCase()} build with a ${tone} scope.`;
-      out.bullets = [`Estimated price range: ${p}`, `Estimated timeline: ${tm}`, `Why: ${state.profile.project?.time || "scope determines the delivery window"}`];
-      out.cards = [{ label: "Complexity", value: lvl, detail: tone }, { label: "Best fit", value: projectFit, detail: industryFit }, { label: "Budget band", value: p, detail: "Realistic range, not a fixed quote." }];
-      out.chips = [{ label: "Suggest features", action: "mode", value: "features", prompt: "Suggest the right features for this project." }, { label: "AI opportunities", action: "mode", value: "ai-business", prompt: "Show me AI opportunities for my business." }, { label: "Get proposal", action: "mode", value: "proposal", prompt: "Turn this into a proposal summary." }];
-      out.ctas = [{ label: "Get a Quote", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }, { label: "WhatsApp Us", href: "https://wa.me/919014719422?text=Hi%20Revanta%2C%20I%20want%20a%20project%20estimate.", target: "url", variant: "btn-secondary" }];
-      out.followUp = "If you share the must-have features, I can tighten the range further.";
-    } else if (featureIntent) {
-      out.title = "Recommended build scope";
-      out.text = `Based on your requirements, the smartest scope is a ${projectFit}.`;
-      out.bullets = [...scope.map((x) => `Include: ${x}`), "Keep phase one focused on the highest-impact workflows.", "Add extra automation only after the core journey is validated."];
-      out.cards = [{ label: "Core fit", value: projectFit, detail: state.profile.project?.time || tm }, { label: "Scope focus", value: scope.length ? scope.join(" + ") : "Discovery required", detail: "Phase one should stay narrow and high-value." }];
-      out.chips = [{ label: "Estimate cost", action: "mode", value: "estimate", prompt: "Estimate the cost for this feature set." }, { label: "MVP advice", action: "mode", value: "mvp", prompt: "What should I launch first as an MVP?" }, { label: "AI for business", action: "mode", value: "ai-business", prompt: "Where can AI help my business?" }];
-      out.ctas = [{ label: "Open Services", href: "#services", value: "services", target: "section", variant: "btn-secondary" }, { label: "Request Quote", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }];
-      out.followUp = "If you want, I can break this into phase one and phase two.";
-    } else if (aiIntent) {
-      out.title = "AI opportunity scan";
-      out.text = industry ? `For a ${industry.name} business, the best AI opportunities are usually the ones that remove repetitive work and speed up response time.` : "AI is most valuable when it removes manual work, improves response speed, or scores leads automatically.";
-      out.bullets = ai;
-      out.cards = [{ label: "High-value AI use", value: ai[0] || "Lead qualification", detail: "Usually the fastest ROI area." }, { label: "Operational fit", value: industryFit, detail: "This is where AI can save time." }];
-      out.chips = [{ label: "Estimate cost", action: "mode", value: "estimate", prompt: "Estimate the cost for an AI workflow." }, { label: "Build MVP", action: "mode", value: "mvp", prompt: "How should I launch this as an MVP?" }, { label: "Get proposal", action: "mode", value: "proposal", prompt: "Turn this into a proposal." }];
-      out.ctas = [{ label: "Quote an AI build", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }, { label: "View AI automation", href: "#service-automation", value: "service-automation", target: "section", variant: "btn-secondary" }];
-      out.followUp = "If you share the industry and main workflow, I can narrow the best AI use case further.";
-    } else if (mvpIntent) {
-      out.title = "MVP strategy";
-      out.text = "For most startup ideas, the smartest move is to launch a lean MVP that proves demand before building every feature.";
-      out.bullets = ["Start with the smallest version that proves demand.", "Launch one clear user journey first instead of every possible feature.", "Add analytics and automation after the first usage signals are clear."];
-      out.cards = [{ label: "Launch focus", value: projectFit, detail: "Build the smallest usable version first." }, { label: "Avoid", value: "Overbuilding", detail: "Skip non-critical features until traction appears." }];
-      out.chips = [{ label: "Estimate MVP", action: "mode", value: "estimate", prompt: "Estimate the MVP cost and timeline." }, { label: "Suggest features", action: "mode", value: "features", prompt: "Which MVP features should I include?" }, { label: "Get proposal", action: "mode", value: "proposal", prompt: "Summarize this as a proposal." }];
-      out.ctas = [{ label: "Discuss MVP", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }, { label: "View products", href: "#products", value: "products", target: "section", variant: "btn-secondary" }];
-      out.followUp = "If you want, I can narrow this into a phase-one build plan.";
-    } else if (proposalIntent) {
-      out.title = "Proposal direction";
-      out.text = "Based on what you shared, this is the shape of a serious build plan we can turn into a clear quote and timeline.";
-      out.bullets = [`Recommended build: ${projectFit}`, `Complexity level: ${lvl}`, `Budget direction: ${p}`, `Timeline direction: ${tm}`];
-      out.cards = [{ label: "Best fit", value: projectFit, detail: industry ? `Optimized for ${industry.name}` : "Based on the current brief." }, { label: "Cost direction", value: p, detail: "Realistic estimate band." }, { label: "Delivery window", value: tm, detail: "Based on scope complexity." }];
-      out.chips = [{ label: "Open quote form", action: "section", value: "contact" }, { label: "WhatsApp", action: "url", value: "https://wa.me/919014719422?text=Hi%20Revanta%2C%20I%20want%20to%20discuss%20a%20project." }, { label: "More services", action: "section", value: "services" }];
-      out.ctas = [{ label: "Get Quote", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }, { label: "Start Project", href: "#contact", value: "contact", target: "section", variant: "btn-secondary" }];
-      out.followUp = "Share the rough scope in the contact form and we’ll turn this into a clean proposal direction.";
-    } else {
-      out.title = "Strategic recommendation";
-      out.text = `${projectType ? `I’d position this as a ${projectFit}. ` : "I’d start by identifying the primary digital product you need. "}${industry ? `For a ${industry.name} business, the most valuable build is usually ${industryFit}.` : "If you share your industry, I can make the recommendation more specific."}`;
-      out.bullets = [`Complexity level: ${lvl}`, `Likely price direction: ${price(score(state.profile, text), state.profile.project)}`, `Likely delivery window: ${tm}`];
-      out.cards = [{ label: "Best fit", value: projectFit, detail: state.profile.project?.time || tm }, { label: "Industry fit", value: industry?.name ? industry.name.toUpperCase() : "Flexible", detail: industryFit }, { label: "Next step", value: MODE[state.mode], detail: OPENER[state.mode] }];
-      out.chips = [{ label: "Estimate cost", action: "mode", value: "estimate", prompt: "Estimate the cost of this idea." }, { label: "Suggest features", action: "mode", value: "features", prompt: "What features should this include?" }, { label: "AI for business", action: "mode", value: "ai-business", prompt: "Where can AI help this business?" }];
-      out.ctas = [{ label: "View Services", href: "#services", value: "services", target: "section", variant: "btn-secondary" }, { label: "Request Quote", href: "#contact", value: "contact", target: "section", variant: "btn-primary" }];
-      out.followUp = "If you answer one more question, I can tighten the recommendation further.";
+
+    if (serviceQuery && !broadIntent && !project && !industry) {
+      return {
+        kicker: "Overview",
+        tag: "REVIX",
+        title: "Here’s how I can help",
+        text: "I can scope websites, mobile apps, AI systems, automations, and MVPs. The goal is to understand the project properly first, then give you a useful recommendation instead of a rushed quote.",
+        cards: [
+          { label: "Focus", value: "Discovery-first", detail: "Better recommendations." },
+          { label: "Tone", value: "Strategic", detail: "Business-aware and concise." },
+          { label: "Outcome", value: "Direction + range", detail: "Not a cheap instant quote." }
+        ],
+        chips: DISCOVERY_CHIPS
+      };
     }
-    updateInsights(state.profile, lvl, out.followUp || "Refine scope");
-    return out;
-  }
+
+    return {
+      kicker: "Discovery",
+      tag: "REVIX",
+      title: "Let’s narrow it down",
+      text: "I can help with websites, apps, AI systems, automation, and MVP planning. Tell me what you want to build, and I’ll ask the right discovery question instead of jumping to pricing too early.",
+      cards: [
+        { label: "What I do", value: "Scope first", detail: "Then estimate direction." },
+        { label: "What to share", value: "Goal + features", detail: "One line is enough." },
+        { label: "Best next step", value: "Discovery", detail: "I will guide the rest." }
+      ],
+      chips: [
+        { label: "I need a website", action: "reply", value: "I need a website" },
+        { label: "I need an app", action: "reply", value: "I need an app" },
+        { label: "I need AI", action: "reply", value: "I need AI" },
+        { label: "I need automation", action: "reply", value: "I need automation" }
+      ]
+    };
+  };
   function submit(text) {
     const clean = (text || "").trim();
     if (!clean) return;
+    const lower = norm(clean);
+    if (has(lower, ["send to our team", "send brief", "send it", "send this"])) {
+      showAssistantPanel();
+      render("user", { text: clean });
+      handleAssistantControl("send");
+      return;
+    }
+    if (has(lower, ["edit details", "change details", "refine brief", "edit the brief"])) {
+      showAssistantPanel();
+      render("user", { text: clean });
+      handleAssistantControl("edit");
+      return;
+    }
+    if (has(lower, ["open contact", "quote form", "contact section"])) {
+      showAssistantPanel();
+      render("user", { text: clean });
+      scrollToSection("contact");
+      return;
+    }
     showAssistantPanel();
     render("user", { text: clean });
-    showTyping();
+    const reply = build(clean);
+    showTyping(reply.why ? BRIEF_LABEL : THINKING_LABEL);
+    const delay = reply.why ? 760 : reply.cards?.length ? 520 : 380;
     setTimeout(() => {
       clearTyping();
-      render("bot", build(clean));
-    }, 380);
+      render("bot", reply);
+    }, delay);
   }
   function queue(text, auto = false) {
     input.value = text;
@@ -711,19 +1118,15 @@
       opened = true;
       render("bot", {
         kicker: "REVIX",
-        tag: "AI Business Copilot",
+        tag: "AI Business Assistant",
         title: "Hi, I’m REVIX",
-        text: "I’m REVIX — your AI business copilot. I can help you scope a website, web app, mobile app, AI automation, MVP, or custom software build.",
+        text: "I help you scope the build properly before we talk pricing. Share what you’re planning, and I’ll guide the discovery, recommendation, budget direction, and timeline.",
         cards: [
-          { label: "What I do", value: "Analyze scope", detail: "Recommend the right build path." },
-          { label: "How I help", value: "Estimate", detail: "Give realistic price and timeline direction." },
-          { label: "Best next step", value: "Quote / contact", detail: "Push toward the right CTA at the right time." }
+          { label: "Role", value: "Business consultant", detail: "Discovery-first guidance." },
+          { label: "Output", value: "Scope + direction", detail: "Not a shallow price bot." },
+          { label: "Style", value: "Strategic", detail: "Concise and premium." }
         ],
-        chips: [
-          { label: "Estimate Cost", action: "mode", value: "estimate", prompt: "Estimate the cost for my project." },
-          { label: "AI for My Business", action: "mode", value: "ai-business", prompt: "Where can AI help my business?" },
-          { label: "Build My MVP", action: "mode", value: "mvp", prompt: "Help me plan an MVP." }
-        ]
+        chips: DISCOVERY_CHIPS
       });
       updateInsights(state.profile, "Ready", "Start discovery");
     }
@@ -756,3 +1159,17 @@
   if (state.minimized) { panel.classList.add("is-minimized"); if (minimizeBtn) minimizeBtn.textContent = "Restore"; }
   save();
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+

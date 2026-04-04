@@ -528,7 +528,7 @@ textarea { resize: vertical; min-height: 150px; }
   z-index: 60;
   display: grid;
   gap: 12px;
-  width: min(360px, calc(100vw - 24px));
+  width: min(420px, calc(100vw - 24px));
 }
 .assistant-launcher {
   width: 100%;
@@ -536,7 +536,7 @@ textarea { resize: vertical; min-height: 150px; }
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border-radius: 22px;
+  border-radius: 24px;
   border: 1px solid rgba(17, 24, 39, 0.08);
   cursor: pointer;
   text-align: left;
@@ -564,6 +564,15 @@ textarea { resize: vertical; min-height: 150px; }
 .assistant-launcher-copy span {
   font-size: 0.82rem;
   color: rgba(17, 24, 39, 0.64);
+}
+.assistant-header-copy {
+  display: grid;
+  gap: 4px;
+}
+.assistant-header-copy span {
+  color: rgba(17, 24, 39, 0.64);
+  font-size: 0.84rem;
+  line-height: 1.35;
 }
 .assistant-header-actions { display: flex; align-items: center; gap: 8px; }
 .assistant-minimize {
@@ -593,16 +602,32 @@ textarea { resize: vertical; min-height: 150px; }
 }
 .assistant-response-title { display: block; font-size: 1.05rem; line-height: 1.35; }
 .assistant-response-copy, .assistant-follow-up, .assistant-mini-card p { margin: 0; color: rgba(17, 24, 39, 0.7); }
-.assistant-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.assistant-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .assistant-mini-card {
   padding: 12px; border-radius: 18px; background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(17, 24, 39, 0.08); display: grid; gap: 8px;
 }
 .assistant-mini-card strong { font-size: 0.95rem; }
+.assistant-why {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(49, 94, 251, 0.06), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(49, 94, 251, 0.12);
+  display: grid;
+  gap: 8px;
+}
+.assistant-why-label {
+  color: rgba(17, 24, 39, 0.58);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 .assistant-response-list { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: rgba(17, 24, 39, 0.72); }
 .assistant-inline-chips, .assistant-cta-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.assistant-chip-soft { font-size: 0.8rem; padding: 8px 12px; }
+.assistant-chip-soft { font-size: 0.8rem; padding: 9px 13px; background: rgba(255, 255, 255, 0.88); }
 .assistant-cta { min-height: 40px; padding: 0 14px; }
-.assistant-typing { display: flex; align-items: center; gap: 6px; min-height: 56px; }
+.assistant-typing { display: grid; gap: 10px; min-height: 56px; }
+.assistant-typing-label { color: rgba(17, 24, 39, 0.6); font-size: 0.8rem; letter-spacing: 0.02em; }
+.assistant-typing-dots { display: flex; align-items: center; gap: 6px; }
 .assistant-typing-dot {
   width: 8px; height: 8px; border-radius: 50%; background: rgba(17, 24, 39, 0.45); animation: assistantPulse 1s infinite ease-in-out;
 }
@@ -613,6 +638,11 @@ textarea { resize: vertical; min-height: 150px; }
 .assistant-panel.is-minimized .assistant-messages,
 .assistant-panel.is-minimized .assistant-suggestions,
 .assistant-panel.is-minimized .assistant-input-row { display: none; }
+.assistant-panel.is-minimized {
+  max-height: 84px;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
 @keyframes assistantPulse {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
   40% { transform: translateY(-3px); opacity: 1; }
@@ -620,9 +650,11 @@ textarea { resize: vertical; min-height: 150px; }
 .assistant-panel {
   display: none;
   padding: 18px;
-  border-radius: 26px;
+  border-radius: 28px;
   border: 1px solid rgba(17, 24, 39, 0.08);
   overflow: hidden;
+  max-height: min(78vh, 760px);
+  backdrop-filter: blur(24px);
 }
 .assistant-panel.is-open {
   display: grid;
@@ -631,7 +663,7 @@ textarea { resize: vertical; min-height: 150px; }
 }
 .assistant-header {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -657,7 +689,7 @@ textarea { resize: vertical; min-height: 150px; }
   cursor: pointer;
 }
 .assistant-messages {
-  max-height: 260px;
+  max-height: 320px;
   overflow: auto;
   display: grid;
   gap: 10px;
@@ -734,6 +766,11 @@ textarea { resize: vertical; min-height: 150px; }
 .assistant-send {
   min-width: 86px;
 }
+.assistant-response {
+  padding: 18px;
+  border-radius: 24px;
+}
+.assistant-response-copy, .assistant-follow-up, .assistant-mini-card p { line-height: 1.6; }
 @keyframes assistantRise {
   from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
