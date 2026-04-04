@@ -38,10 +38,9 @@
     proposal: "I’ll summarize the project direction and next step."
   };
   const DISCOVERY_CHIPS = [
-    { label: "I need a website", action: "reply", value: "I need a website" },
-    { label: "I need an app", action: "reply", value: "I need an app" },
-    { label: "I need AI", action: "reply", value: "I need AI" },
-    { label: "I need automation", action: "reply", value: "I need automation" }
+    { label: "Website", action: "reply", value: "I need a website" },
+    { label: "Mobile App", action: "reply", value: "I need an app" },
+    { label: "AI Automation", action: "reply", value: "I need AI automation" }
   ];
   const THINKING_LABEL = "REVIX is analyzing...";
   const BRIEF_LABEL = "REVIX is preparing your recommendation...";
@@ -1041,38 +1040,33 @@
     }
 
     if (serviceQuery && !broadIntent && !project && !industry) {
+        return {
+          kicker: "Overview",
+          tag: "REVIX",
+          title: "Here’s how I can help",
+          text: "I can scope websites, mobile apps, AI systems, automations, and MVPs. The goal is to understand the project properly first, then give you a useful recommendation instead of a rushed quote.",
+          cards: [
+            { label: "Focus", value: "Discovery-first", detail: "Better recommendations." },
+            { label: "Tone", value: "Strategic", detail: "Business-aware and concise." },
+            { label: "Outcome", value: "Direction + range", detail: "Not a cheap instant quote." }
+          ],
+          chips: DISCOVERY_CHIPS
+        };
+      }
+
       return {
-        kicker: "Overview",
+        kicker: "Discovery",
         tag: "REVIX",
-        title: "Here’s how I can help",
-        text: "I can scope websites, mobile apps, AI systems, automations, and MVPs. The goal is to understand the project properly first, then give you a useful recommendation instead of a rushed quote.",
+        title: "Let’s narrow it down",
+        text: "I can help with websites, apps, AI systems, automation, and MVP planning. Tell me what you want to build, and I’ll ask the right discovery question instead of jumping to pricing too early.",
         cards: [
-          { label: "Focus", value: "Discovery-first", detail: "Better recommendations." },
-          { label: "Tone", value: "Strategic", detail: "Business-aware and concise." },
-          { label: "Outcome", value: "Direction + range", detail: "Not a cheap instant quote." }
+          { label: "What I do", value: "Scope first", detail: "Then estimate direction." },
+          { label: "What to share", value: "Goal + features", detail: "One line is enough." },
+          { label: "Best next step", value: "Discovery", detail: "I will guide the rest." }
         ],
         chips: DISCOVERY_CHIPS
       };
-    }
-
-    return {
-      kicker: "Discovery",
-      tag: "REVIX",
-      title: "Let’s narrow it down",
-      text: "I can help with websites, apps, AI systems, automation, and MVP planning. Tell me what you want to build, and I’ll ask the right discovery question instead of jumping to pricing too early.",
-      cards: [
-        { label: "What I do", value: "Scope first", detail: "Then estimate direction." },
-        { label: "What to share", value: "Goal + features", detail: "One line is enough." },
-        { label: "Best next step", value: "Discovery", detail: "I will guide the rest." }
-      ],
-      chips: [
-        { label: "I need a website", action: "reply", value: "I need a website" },
-        { label: "I need an app", action: "reply", value: "I need an app" },
-        { label: "I need AI", action: "reply", value: "I need AI" },
-        { label: "I need automation", action: "reply", value: "I need automation" }
-      ]
     };
-  };
   function submit(text) {
     const clean = (text || "").trim();
     if (!clean) return;
@@ -1120,11 +1114,9 @@
         kicker: "REVIX",
         tag: "AI Business Assistant",
         title: "Hi, I’m REVIX",
-        text: "Describe what you’re planning to build, and I’ll map the smartest direction before we talk pricing.",
+        text: "Tell me what you’re planning to build, and I’ll map the smartest direction before we talk pricing.",
         cards: [
-          { label: "Role", value: "Business consultant", detail: "Discovery-first guidance." },
-          { label: "Output", value: "Scope + direction", detail: "Not a shallow price bot." },
-          { label: "Style", value: "Strategic", detail: "Concise and premium." }
+          { label: "Role", value: "Business consultant", detail: "Discovery first." }
         ],
         chips: DISCOVERY_CHIPS
       });
