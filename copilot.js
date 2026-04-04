@@ -11,10 +11,10 @@
   const closeBtn = el("#assistant-close");
   const minimizeBtn = el("#assistant-minimize");
   const messages = el("#assistant-messages");
+  const suggestions = el("#assistant-suggestions");
   const form = el("#assistant-form");
   const input = el("#assistant-input");
   const modes = Array.from(shell.querySelectorAll(".assistant-mode"));
-  const chips = Array.from(shell.querySelectorAll(".assistant-chip"));
   const fit = el("#assistant-insight-fit");
   const complexity = el("#assistant-insight-complexity");
   const next = el("#assistant-insight-next");
@@ -403,6 +403,96 @@
     autoChannel: "Where does this process live today?",
     autoTools: "What tools are you currently using?"
   }[field] || "Tell me a bit more about the project.");
+  const discoveryOptions = (field) => ({
+    intro: [
+      { label: "Website", action: "reply", value: "I need a website" },
+      { label: "Mobile App", action: "reply", value: "I need an app" },
+      { label: "AI Automation", action: "reply", value: "I need AI automation" }
+    ],
+    websiteSubtype: [
+      { label: "Business Website", action: "reply", value: "Business website" },
+      { label: "SaaS / Web App", action: "reply", value: "SaaS web app" },
+      { label: "E-commerce", action: "reply", value: "E-commerce" }
+    ],
+    websiteGoal: [
+      { label: "Lead Capture", action: "reply", value: "Lead capture" },
+      { label: "Sales", action: "reply", value: "Sales" },
+      { label: "Bookings", action: "reply", value: "Bookings" }
+    ],
+    websiteFeatures: [
+      { label: "Login / Users", action: "reply", value: "Login and user accounts" },
+      { label: "Admin Dashboard", action: "reply", value: "Admin dashboard" },
+      { label: "Payments", action: "reply", value: "Payments and checkout" }
+    ],
+    appPlatform: [
+      { label: "Android", action: "reply", value: "Android" },
+      { label: "iPhone", action: "reply", value: "iPhone" },
+      { label: "Both", action: "reply", value: "Both platforms" }
+    ],
+    appAudience: [
+      { label: "Customers", action: "reply", value: "Customers" },
+      { label: "Internal Team", action: "reply", value: "Internal business use" }
+    ],
+    appFeatures: [
+      { label: "Login / Users", action: "reply", value: "Login and user accounts" },
+      { label: "Admin Panel", action: "reply", value: "Admin panel" },
+      { label: "Payments", action: "reply", value: "Payments and subscriptions" }
+    ],
+    aiType: [
+      { label: "AI Chatbot", action: "reply", value: "AI chatbot" },
+      { label: "AI Automation", action: "reply", value: "AI automation" },
+      { label: "Support Assistant", action: "reply", value: "AI support assistant" }
+    ],
+    aiBusiness: [
+      { label: "Sales", action: "reply", value: "Sales" },
+      { label: "Support", action: "reply", value: "Support" },
+      { label: "Operations", action: "reply", value: "Operations" }
+    ],
+    aiProcess: [
+      { label: "Lead Qualification", action: "reply", value: "Lead qualification" },
+      { label: "Follow-ups", action: "reply", value: "Follow-ups" },
+      { label: "Reporting", action: "reply", value: "Reporting" }
+    ],
+    aiDepartment: [
+      { label: "Sales", action: "reply", value: "Sales" },
+      { label: "Support", action: "reply", value: "Support" },
+      { label: "Operations", action: "reply", value: "Operations" }
+    ],
+    autoManual: [
+      { label: "Lead Follow-ups", action: "reply", value: "Lead follow-ups" },
+      { label: "WhatsApp Replies", action: "reply", value: "WhatsApp replies" },
+      { label: "Reporting", action: "reply", value: "Reporting" }
+    ],
+    autoChannel: [
+      { label: "WhatsApp", action: "reply", value: "WhatsApp" },
+      { label: "Email", action: "reply", value: "Email" },
+      { label: "CRM", action: "reply", value: "CRM" }
+    ],
+    autoTools: [
+      { label: "Google Sheets", action: "reply", value: "Google Sheets" },
+      { label: "CRM", action: "reply", value: "CRM" },
+      { label: "Notion", action: "reply", value: "Notion" }
+    ],
+    review: [
+      { label: "Send Brief", action: "send", value: "send" },
+      { label: "WhatsApp", action: "url", value: buildWhatsAppUrl(getLeadPreview()) },
+      { label: "Edit Details", action: "edit", value: "edit" }
+    ]
+  }[field] || []);
+  const setQuickReplies = (items) => {
+    if (!suggestions) return;
+    suggestions.innerHTML = "";
+    (items || []).slice(0, 3).forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "assistant-chip";
+      button.textContent = item.label;
+      button.dataset.action = item.action || "reply";
+      button.dataset.value = item.value || item.label;
+      if (item.prompt) button.dataset.prompt = item.prompt;
+      suggestions.appendChild(button);
+    });
+  };
   const progressText = () => {
     const step = state.leadStage;
     if (step === "intro") return "Step 1 of 5 - Understanding your project";
@@ -629,6 +719,7 @@
     title: "Let's scope this properly",
     text: discoveryQuestion(field),
     cards: discoveryCards(),
+    chips: discoveryOptions(field),
     followUp: "Pick the closest option and I'll narrow the next question."
   });
   const leadReview = () => {
@@ -669,6 +760,109 @@
       ],
       followUp: "You can send it now, share it on WhatsApp, or refine one more detail before we lock it in."
     };
+  };
+  const leadStageNext = {
+    websiteSubtype: "websiteGoal",
+    websiteGoal: "websiteFeatures",
+    websiteFeatures: "review",
+    appPlatform: "appAudience",
+    appAudience: "appFeatures",
+    appFeatures: "review",
+    aiType: "aiBusiness",
+    aiBusiness: "aiProcess",
+    aiProcess: "aiDepartment",
+    aiDepartment: "review",
+    autoManual: "autoChannel",
+    autoChannel: "autoTools",
+    autoTools: "review"
+  };
+  const captureStageAnswer = (stage, text, lead) => {
+    const t = text.trim();
+    switch (stage) {
+      case "websiteSubtype": {
+        let subtype = "";
+        if (has(t, ["business"])) subtype = "Business Website";
+        else if (has(t, ["saas", "web app", "dashboard", "portal"])) subtype = "SaaS / Web App";
+        else if (has(t, ["ecommerce", "e-commerce", "store", "shop"])) subtype = "E-commerce";
+        else if (has(t, ["landing"])) subtype = "Landing Page";
+        else if (has(t, ["portfolio"])) subtype = "Portfolio";
+        else if (has(t, ["custom", "platform"])) subtype = "Custom Platform";
+        else subtype = detectGoal(t) || (has(t, ["website"]) ? "Business Website" : "");
+        if (subtype) { lead.projectType = subtype; return true; }
+        return false;
+      }
+      case "websiteGoal": {
+        const goal = detectGoal(t);
+        if (goal) { lead.requirement = goal; return true; }
+        return false;
+      }
+      case "websiteFeatures": {
+        const features = featureScope(state.profile, t);
+        if (features.length) {
+          lead.features = Array.from(new Set([...(lead.features || []), ...features]));
+          return true;
+        }
+        return false;
+      }
+      case "appPlatform": {
+        const platform = detectAppPlatform(t) || (has(norm(t), ["both"]) ? "Both Platforms" : "");
+        if (platform) { lead.projectType = platform; return true; }
+        return false;
+      }
+      case "appAudience": {
+        const audience = detectAppAudience(t);
+        if (audience) { lead.requirement = audience; return true; }
+        return false;
+      }
+      case "appFeatures": {
+        const features = featureScope(state.profile, t);
+        if (features.length) {
+          lead.features = Array.from(new Set([...(lead.features || []), ...features]));
+          return true;
+        }
+        return false;
+      }
+      case "aiType": {
+        const type = detectAIType(t);
+        if (type) { lead.projectType = type; return true; }
+        return false;
+      }
+      case "aiBusiness": {
+        const business = detectAIBusiness(t);
+        if (business) { lead.industry = business; return true; }
+        return false;
+      }
+      case "aiProcess": {
+        const process = detectAIProcess(t);
+        if (process) { lead.requirement = process; return true; }
+        return false;
+      }
+      case "aiDepartment": {
+        const department = detectAIDepartment(t);
+        if (department) { lead.department = department; return true; }
+        return false;
+      }
+      case "autoManual": {
+        const manual = detectAutomationManual(t);
+        if (manual) { lead.requirement = manual; return true; }
+        return false;
+      }
+      case "autoChannel": {
+        const channel = detectAutomationChannel(t);
+        if (channel) { lead.channel = channel; return true; }
+        return false;
+      }
+      case "autoTools": {
+        const tools = detectAutomationTools(t);
+        if (tools.length) {
+          lead.tools = Array.from(new Set([...(lead.tools || []), ...tools]));
+          return true;
+        }
+        return false;
+      }
+      default:
+        return false;
+    }
   };
   const leadPayloadForEmail = () => {
     const brief = getLeadPreview();
@@ -770,11 +964,32 @@
   };
   const leadBranch = (text) => {
     const lead = syncLeadFromText(text);
+    const stage = state.leadStage;
+    if (stage && stage !== "idle" && stage !== "intro" && stage !== "review" && stage !== "sent") {
+      const answered = captureStageAnswer(stage, text, lead);
+      if (answered) {
+        const nextStage = leadStageNext[stage] || "review";
+        state.leadStage = nextStage;
+        save();
+        if (nextStage === "review") {
+          lead.timeline = lead.timeline || timeline(complexityScore(state.profile, text), state.profile.project, lead.features.length || state.profile.features.length);
+          lead.complexity = lead.complexity || band(complexityScore(state.profile, text))[0];
+          lead.summary = buildLeadSummary(leadPayloadForEmail());
+          setQuickReplies(discoveryOptions("review"));
+          return leadReview();
+        }
+        setQuickReplies(discoveryOptions(nextStage));
+        return leadPrompt(nextStage);
+      }
+      setQuickReplies(discoveryOptions(stage));
+      return leadPrompt(stage);
+    }
     const project = state.profile.project || findProject(text);
     const broad = detectBroadIntent(text) || project?.name || "";
     if (!broad) {
       state.leadStage = "intro";
       save();
+      setQuickReplies(discoveryOptions("intro"));
       return {
         kicker: "Discovery",
         tag: "REVIX",
@@ -788,16 +1003,19 @@
       if (!lead.projectType || lead.projectType === "Website") {
         state.leadStage = "websiteSubtype";
         save();
+        setQuickReplies(discoveryOptions("websiteSubtype"));
         return leadPrompt("websiteSubtype");
       }
       if (!lead.requirement) {
         state.leadStage = "websiteGoal";
         save();
+        setQuickReplies(discoveryOptions("websiteGoal"));
         return leadPrompt("websiteGoal");
       }
       if (!(lead.features || []).length) {
         state.leadStage = "websiteFeatures";
         save();
+        setQuickReplies(discoveryOptions("websiteFeatures"));
         return leadPrompt("websiteFeatures");
       }
     }
@@ -805,16 +1023,19 @@
       if (!lead.projectType || lead.projectType === "Mobile App") {
         state.leadStage = "appPlatform";
         save();
+        setQuickReplies(discoveryOptions("appPlatform"));
         return leadPrompt("appPlatform");
       }
       if (!lead.requirement) {
         state.leadStage = "appAudience";
         save();
+        setQuickReplies(discoveryOptions("appAudience"));
         return leadPrompt("appAudience");
       }
       if (!(lead.features || []).length) {
         state.leadStage = "appFeatures";
         save();
+        setQuickReplies(discoveryOptions("appFeatures"));
         return leadPrompt("appFeatures");
       }
     }
@@ -822,21 +1043,25 @@
       if (!lead.projectType || lead.projectType === "AI Automation" || lead.projectType === "Fine-Tuning") {
         state.leadStage = "aiType";
         save();
+        setQuickReplies(discoveryOptions("aiType"));
         return leadPrompt("aiType");
       }
       if (!lead.industry) {
         state.leadStage = "aiBusiness";
         save();
+        setQuickReplies(discoveryOptions("aiBusiness"));
         return leadPrompt("aiBusiness");
       }
       if (!lead.requirement) {
         state.leadStage = "aiProcess";
         save();
+        setQuickReplies(discoveryOptions("aiProcess"));
         return leadPrompt("aiProcess");
       }
       if (!lead.department) {
         state.leadStage = "aiDepartment";
         save();
+        setQuickReplies(discoveryOptions("aiDepartment"));
         return leadPrompt("aiDepartment");
       }
     }
@@ -844,16 +1069,19 @@
       if (!lead.requirement) {
         state.leadStage = "autoManual";
         save();
+        setQuickReplies(discoveryOptions("autoManual"));
         return leadPrompt("autoManual");
       }
       if (!lead.channel) {
         state.leadStage = "autoChannel";
         save();
+        setQuickReplies(discoveryOptions("autoChannel"));
         return leadPrompt("autoChannel");
       }
       if (!(lead.tools || []).length) {
         state.leadStage = "autoTools";
         save();
+        setQuickReplies(discoveryOptions("autoTools"));
         return leadPrompt("autoTools");
       }
     }
@@ -863,6 +1091,7 @@
     lead.summary = buildLeadSummary(leadPayloadForEmail());
     state.leadStage = "review";
     save();
+    setQuickReplies(discoveryOptions("review"));
     return leadReview();
   };
   const renderCard = (label, value, detail) => {
@@ -1136,6 +1365,7 @@
     panel.setAttribute("aria-hidden", "false");
     launcher.setAttribute("aria-expanded", "true");
     panel.classList.toggle("is-minimized", !!state.minimized);
+    setQuickReplies(discoveryOptions(state.leadStage || "intro"));
     if (!opened) {
       opened = true;
       render("bot", {
