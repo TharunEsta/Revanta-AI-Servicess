@@ -30,12 +30,12 @@
     proposal: "Get Proposal"
   };
   const OPENER = {
-    ask: "Tell me what you need, and Iâ€™ll map the smartest direction.",
-    estimate: "Iâ€™ll assess the scope, complexity, and budget direction.",
-    features: "Iâ€™ll help shape the right feature set without overbuilding.",
-    "ai-business": "Iâ€™ll identify where AI can save time and add leverage.",
-    mvp: "Iâ€™ll help narrow the idea into a launchable MVP.",
-    proposal: "Iâ€™ll summarize the project direction and next step."
+    ask: "Tell me what you’re planning to build, and I’ll map the smartest direction.",
+    estimate: "I’ll assess the scope, complexity, and budget direction.",
+    features: "I’ll help shape the right feature set without overbuilding.",
+    "ai-business": "I’ll identify where AI can save time and add leverage.",
+    mvp: "I’ll help narrow the idea into a launchable MVP.",
+    proposal: "I’ll summarize the project direction and next step."
   };
   const DISCOVERY_CHIPS = [
     { label: "I need a website", action: "reply", value: "I need a website" },
@@ -43,8 +43,8 @@
     { label: "I need AI", action: "reply", value: "I need AI" },
     { label: "I need automation", action: "reply", value: "I need automation" }
   ];
-  const THINKING_LABEL = "REVIX is analyzing your requirements...";
-  const BRIEF_LABEL = "REVIX is preparing your brief...";
+  const THINKING_LABEL = "REVIX is analyzing...";
+  const BRIEF_LABEL = "REVIX is preparing your recommendation...";
   const INDUSTRIES = [
     ["real estate", ["real estate", "property", "broker", "agent"], "lead capture website, listing portal, WhatsApp follow-up, CRM dashboard", ["AI lead qualification", "property recommendation engine", "enquiry automation"]],
     ["fashion", ["fashion", "clothing", "apparel", "garment", "textile"], "catalog website, wholesale portal, order dashboard, enquiry automation", ["AI enquiry sorting", "catalog assistance", "order update automation"]],
@@ -779,8 +779,8 @@
       return {
         kicker: "Discovery",
         tag: "REVIX",
-        title: "Let’s map the build direction",
-        text: "Before I estimate anything, I need to understand what kind of build you’re planning. Tell me the project type, and I’ll start with the right follow-up question.",
+        title: "Let’s map the build",
+        text: "Before I estimate anything, I need to understand what kind of build you’re planning. Tell me the project type, and I’ll start with the right question.",
         cards: discoveryCards(),
         chips: DISCOVERY_CHIPS
       };
@@ -1120,7 +1120,7 @@
         kicker: "REVIX",
         tag: "AI Business Assistant",
         title: "Hi, I’m REVIX",
-        text: "I help you scope the build properly before we talk pricing. Share what you’re planning, and I’ll guide the discovery, recommendation, budget direction, and timeline.",
+        text: "Describe what you’re planning to build, and I’ll map the smartest direction before we talk pricing.",
         cards: [
           { label: "Role", value: "Business consultant", detail: "Discovery-first guidance." },
           { label: "Output", value: "Scope + direction", detail: "Not a shallow price bot." },
