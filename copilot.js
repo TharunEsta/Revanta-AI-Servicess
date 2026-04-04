@@ -459,7 +459,7 @@
   const discoveryCards = () => {
     const currentIntent = state.profile.project?.name || "discovery";
     const cards = [
-      { label: "Current read", value: currentIntent === "discovery" ? "Discovery" : currentIntent.toUpperCase(), detail: "Iâ€™m narrowing the scope." },
+      { label: "Current read", value: currentIntent === "discovery" ? "Discovery" : currentIntent.toUpperCase(), detail: "I'm narrowing the scope." },
       { label: "Role", value: "Solution architect", detail: "Discovery-first guidance." },
       { label: "Output", value: "Scope + direction", detail: "Then budget and timeline." }
     ];
@@ -626,10 +626,10 @@
   const leadPrompt = (field) => ({
     kicker: progressText() || "Discovery",
     tag: "REVIX",
-    title: "Letâ€™s scope this properly",
+    title: "Let's scope this properly",
     text: discoveryQuestion(field),
     cards: discoveryCards(),
-    followUp: "Pick the closest option and Iâ€™ll narrow the next question."
+    followUp: "Pick the closest option and I'll narrow the next question."
   });
   const leadReview = () => {
     const brief = getLeadPreview();
