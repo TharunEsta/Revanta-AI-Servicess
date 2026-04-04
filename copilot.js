@@ -718,7 +718,6 @@
     tag: "REVIX",
     title: "Let's scope this properly",
     text: discoveryQuestion(field),
-    cards: discoveryCards(),
     chips: discoveryOptions(field),
     followUp: "Pick the closest option and I'll narrow the next question."
   });
@@ -995,7 +994,6 @@
         tag: "REVIX",
         title: "Let’s map the build",
         text: "Before I estimate anything, I need to understand what kind of build you’re planning. Tell me the project type, and I’ll start with the right question.",
-        cards: discoveryCards(),
         chips: DISCOVERY_CHIPS
       };
     }
