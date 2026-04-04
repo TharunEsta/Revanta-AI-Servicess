@@ -891,6 +891,50 @@
     messages.scrollTop = messages.scrollHeight;
     typing = row;
   };
+  const resolveShortcut = (label) => {
+    const text = (label || "").toLowerCase();
+    if (text.includes("website")) return "I need a website";
+    if (text.includes("mobile")) return "I need an app";
+    if (text.includes("ai")) return "I need AI automation";
+    if (text.includes("automation")) return "I need automation";
+    return label || "";
+  };
+  const handleAssistantClick = (button) => {
+    if (!button) return;
+    const action = button.dataset.action || "reply";
+    const value = button.dataset.value || button.textContent || "";
+    const prompt = button.dataset.prompt || value;
+
+    if (action === "mode") {
+      state.mode = value in MODE ? value : "ask";
+      modes.forEach((m) => m.classList.toggle("is-active", m.dataset.mode === state.mode));
+      save();
+      sendPrompt(prompt || value, true);
+      return;
+    }
+
+    if (action === "section") {
+      scrollToSection(value);
+      return;
+    }
+
+    if (action === "url") {
+      window.open(value, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (action === "edit") {
+      handleAssistantControl("edit");
+      return;
+    }
+
+    if (action === "send") {
+      handleAssistantControl("send");
+      return;
+    }
+
+    sendPrompt(prompt || resolveShortcut(value), true);
+  };
   const render = (role, payload) => {
     const row = document.createElement("article");
     row.className = `assistant-message ${role}`;
@@ -947,24 +991,9 @@
         b.type = "button";
         b.className = "assistant-chip assistant-chip-soft";
         b.textContent = x.label;
-        b.addEventListener("click", () => {
-          if (x.action === "mode") {
-            state.mode = x.value in MODE ? x.value : "ask";
-            modes.forEach((m) => m.classList.toggle("is-active", m.dataset.mode === state.mode));
-            save();
-            sendPrompt(x.prompt || x.label, true);
-          } else if (x.action === "section") {
-            scrollToSection(x.value);
-          } else if (x.action === "url") {
-            window.open(x.value, "_blank", "noopener,noreferrer");
-          } else if (x.action === "edit") {
-            handleAssistantControl("edit");
-          } else if (x.action === "send") {
-            handleAssistantControl("send");
-          } else {
-            sendPrompt(x.value, true);
-          }
-        });
+        b.dataset.action = x.action || "reply";
+        b.dataset.value = x.value || "";
+        if (x.prompt) b.dataset.prompt = x.prompt;
         row.appendChild(b);
       });
       bubble.appendChild(row);
@@ -978,10 +1007,8 @@
           button.type = "button";
           button.className = `btn ${x.variant || "btn-secondary"} assistant-cta`;
           button.textContent = x.label;
-          button.addEventListener("click", () => {
-            if (x.action === "send") handleAssistantControl("send");
-            else if (x.action === "edit") handleAssistantControl("edit");
-          });
+          button.dataset.action = x.action || "reply";
+          button.dataset.value = x.value || "";
           row.appendChild(button);
           return;
         }
@@ -990,7 +1017,8 @@
         a.className = `btn ${x.variant || "btn-secondary"} assistant-cta`;
         a.href = x.href || "#";
         a.textContent = x.label;
-        if (x.target === "section") a.addEventListener("click", (e) => { e.preventDefault(); scrollToSection(x.value); });
+        a.dataset.action = x.action || (x.target === "section" ? "section" : x.target === "url" ? "url" : "reply");
+        a.dataset.value = x.value || x.href || "";
         if (x.target === "url") { a.target = "_blank"; a.rel = "noopener noreferrer"; }
         row.appendChild(a);
       });
@@ -1115,9 +1143,6 @@
         tag: "AI Business Assistant",
         title: "Hi, I’m REVIX",
         text: "Tell me what you’re planning to build, and I’ll map the smartest direction before we talk pricing.",
-        cards: [
-          { label: "Role", value: "Business consultant", detail: "Discovery first." }
-        ],
         chips: DISCOVERY_CHIPS
       });
       updateInsights(state.profile, "Ready", "Start discovery");
@@ -1137,16 +1162,19 @@
   launcher.addEventListener("click", showAssistantPanel);
   closeBtn.addEventListener("click", hideAssistantPanel);
   minimizeBtn?.addEventListener("click", handleMinimize);
-  modes.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.mode === state.mode);
-    button.addEventListener("click", () => {
-      state.mode = button.dataset.mode || "ask";
-      modes.forEach((m) => m.classList.toggle("is-active", m.dataset.mode === state.mode));
-      save();
-      sendPrompt(OPENER[state.mode], true);
-    });
+  shell.addEventListener("click", (event) => {
+    const chip = event.target.closest(".assistant-chip");
+    const cta = event.target.closest(".assistant-cta");
+    if (chip && shell.contains(chip)) {
+      event.preventDefault();
+      handleAssistantClick(chip);
+      return;
+    }
+    if (cta && shell.contains(cta)) {
+      event.preventDefault();
+      handleAssistantClick(cta);
+    }
   });
-  chips.forEach((chip) => chip.addEventListener("click", () => submit(chip.textContent || "")));
   form.addEventListener("submit", (event) => { event.preventDefault(); submit(input.value); input.value = ""; });
   if (state.minimized) { panel.classList.add("is-minimized"); if (minimizeBtn) minimizeBtn.textContent = "Restore"; }
   save();
