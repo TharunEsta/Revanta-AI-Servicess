@@ -293,6 +293,39 @@ featureChips.forEach((chip) => {
 
 updateEstimate();
 
+function updateEstimate() {
+  const activeFeatures = Array.from(featureChips)
+    .filter((chip) => chip.classList.contains("is-active"))
+    .map((chip) => chip.dataset.feature);
+
+  const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
+
+  let tier = "Launch";
+  let range = "â‚¹75k - â‚¹1.5L";
+  let timeline = "2 - 4 weeks";
+
+  if (score >= 3 && score <= 4) {
+    tier = "Growth";
+    range = "â‚¹1.5L - â‚¹3L";
+    timeline = "4 - 6 weeks";
+  } else if (score >= 5 && score <= 7) {
+    tier = "Scale";
+    range = "â‚¹3L - â‚¹6L";
+    timeline = "6 - 10 weeks";
+  } else if (score >= 8) {
+    tier = "Custom / Product";
+    range = "â‚¹6L+";
+    timeline = "8 - 14 weeks";
+  }
+
+  if (estimateTier) estimateTier.textContent = tier;
+  if (estimateRange) estimateRange.textContent = range;
+  if (estimateTimeline) estimateTimeline.textContent = timeline;
+  if (estimateSummary) {
+    estimateSummary.textContent = activeFeatures.map((feature) => featureLabels[feature]).join(", ") || "Strategic website";
+  }
+}
+
 if (heroShell) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let heroState = 0;
@@ -308,4 +341,67 @@ if (heroShell) {
     }, 4800);
   }
 }
+
+function updateEstimate() {
+  const activeFeatures = Array.from(featureChips)
+    .filter((chip) => chip.classList.contains("is-active"))
+    .map((chip) => chip.dataset.feature);
+
+  const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
+
+  let tier = "Launch";
+  let range = "₹75k - ₹1.5L";
+  let timeline = "2 - 4 weeks";
+
+  if (score >= 3 && score <= 4) {
+    tier = "Growth";
+    range = "₹1.5L - ₹3L";
+    timeline = "4 - 6 weeks";
+  } else if (score >= 5 && score <= 7) {
+    tier = "Scale";
+    range = "₹3L - ₹6L";
+    timeline = "6 - 10 weeks";
+  } else if (score >= 8) {
+    tier = "Custom / Product";
+    range = "₹6L+";
+    timeline = "8 - 14 weeks";
+  }
+
+  if (estimateTier) estimateTier.textContent = tier;
+  if (estimateRange) estimateRange.textContent = range;
+  if (estimateTimeline) estimateTimeline.textContent = timeline;
+  if (estimateSummary) {
+    estimateSummary.textContent = activeFeatures.map((feature) => featureLabels[feature]).join(", ") || "Strategic website";
+  }
+}
+
+function setStagger(nodes, base = 0, step = 80) {
+  Array.from(nodes || []).forEach((node, index) => {
+    node.style.setProperty("--reveal-delay", `${base + index * step}ms`);
+  });
+}
+
+function setChildStagger(selector, step = 90) {
+  document.querySelectorAll(selector).forEach((group) => {
+    Array.from(group.children).forEach((child, index) => {
+      child.style.setProperty("--child-delay", `${index * step}ms`);
+    });
+  });
+}
+
+setStagger(document.querySelectorAll(".services-grid .reveal"), 40, 80);
+setStagger(document.querySelectorAll(".product-grid .reveal"), 40, 80);
+setStagger(document.querySelectorAll(".usecase-grid .reveal"), 40, 80);
+setStagger(document.querySelectorAll(".testimonial-grid .reveal"), 40, 100);
+setStagger(document.querySelectorAll(".pricing-grid .reveal"), 40, 100);
+setStagger(document.querySelectorAll(".process-grid .reveal"), 40, 100);
+setStagger(document.querySelectorAll(".contact-grid .reveal"), 40, 100);
+setStagger(document.querySelectorAll(".faq-layout .reveal"), 40, 90);
+setStagger(document.querySelectorAll(".service-detail-layout .reveal"), 40, 90);
+setStagger(document.querySelectorAll(".estimate-panel.reveal"), 90, 0);
+setStagger(document.querySelectorAll(".hero-visual.reveal"), 60, 0);
+setChildStagger(".hero-copy", 90);
+setChildStagger(".section-heading", 80);
+setChildStagger(".contact-intro", 80);
+setChildStagger(".faq-toolbar", 70);
 
