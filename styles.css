@@ -525,6 +525,57 @@ p { line-height: 1.7; color: var(--muted); }
   background: rgba(49, 94, 251, 0.08);
 }
 .testimonial-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 36px; }
+.demo-flow {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.demo-step {
+  padding: 14px 14px 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 244, 238, 0.82));
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  display: grid;
+  gap: 6px;
+  position: relative;
+}
+.demo-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 23px;
+  bottom: -13px;
+  width: 1px;
+  height: 13px;
+  background: linear-gradient(180deg, rgba(49, 94, 251, 0.42), rgba(49, 94, 251, 0.08));
+}
+.demo-step-mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, rgba(49, 94, 251, 0.56));
+  border: 1px solid rgba(49, 94, 251, 0.28);
+  box-shadow: 0 0 0 4px rgba(49, 94, 251, 0.08);
+}
+.demo-step-index {
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(49, 94, 251, 0.08);
+  border: 1px solid rgba(49, 94, 251, 0.14);
+  color: rgba(17, 24, 39, 0.78);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.demo-step strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+.demo-step p {
+  margin: 0;
+  color: rgba(17, 24, 39, 0.7);
+  line-height: 1.55;
+}
 .testimonial-card blockquote { margin: 0; font-size: 1.02rem; line-height: 1.75; color: rgba(17, 24, 39, 0.84); }
 .testimonial-card figcaption { margin-top: 18px; display: flex; flex-direction: column; gap: 4px; }
 .pricing-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 36px; align-items: stretch; }
