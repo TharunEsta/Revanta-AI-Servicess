@@ -116,7 +116,7 @@ if (quoteForm) {
       const result = await window.emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, quoteForm);
       if (result.status === 200 || result.text === "OK") {
         if (formStatus) {
-          formStatus.textContent = "Quote request sent successfully. We’ll get back to you soon.";
+          formStatus.textContent = "Quote request sent successfully. We'll get back to you soon.";
         }
         quoteForm.reset();
       } else if (formStatus) {

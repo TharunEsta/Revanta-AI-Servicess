@@ -30,7 +30,7 @@
     proposal: "Get Proposal"
   };
   const OPENER = {
-    ask: "Tell me what you’re planning to build, and I’ll map the smartest direction.",
+    ask: "Tell me what you're planning to build, and I'll map the smartest direction.",
     estimate: "I’ll assess the scope, complexity, and budget direction.",
     features: "I’ll help shape the right feature set without overbuilding.",
     "ai-business": "I’ll identify where AI can save time and add leverage.",
@@ -53,11 +53,11 @@
     ["agency", ["agency", "marketing", "design", "branding", "creative", "studio"], "agency website, client portal, proposal flow, project dashboard", ["AI proposal drafting", "lead scoring", "client update automation"]]
   ].map(([name, words, fit, ai]) => ({ name, words, fit, ai }));
   const PROJECTS = [
-    ["website", ["website", "landing page", "company website", "portfolio", "marketing site"], "premium website / landing page", "3 days to 2 weeks", "â‚¹25k - â‚¹50k"],
-    ["web app", ["web app", "portal", "dashboard", "crm", "saas", "admin panel"], "web app / dashboard / portal", "2 to 6 weeks", "â‚¹50k - â‚¹1.5L"],
-    ["mobile app", ["mobile app", "android app", "ios app", "application", "app development"], "Android / iOS app build", "4 to 10 weeks", "â‚¹1L - â‚¹3L+"],
-    ["ai automation", ["ai automation", "automation", "workflow automation", "agent", "bot", "assistant"], "AI automation system", "1 to 3 weeks", "â‚¹35k - â‚¹1.5L"],
-    ["fine tuning", ["fine tuning", "finetuning", "model training", "ai model", "llm"], "AI fine-tuning / custom model workflow", "3 to 8 weeks", "â‚¹1.5L - â‚¹6L+"]
+    ["website", ["website", "landing page", "company website", "portfolio", "marketing site"], "premium website / landing page", "3 days to 2 weeks", "₹25k - ₹50k"],
+    ["web app", ["web app", "portal", "dashboard", "crm", "saas", "admin panel"], "web app / dashboard / portal", "2 to 6 weeks", "₹50k - ₹1.5L"],
+    ["mobile app", ["mobile app", "android app", "ios app", "application", "app development"], "Android / iOS app build", "4 to 10 weeks", "₹1L - ₹3L+"],
+    ["ai automation", ["ai automation", "automation", "workflow automation", "agent", "bot", "assistant"], "AI automation system", "1 to 3 weeks", "₹35k - ₹1.5L"],
+    ["fine tuning", ["fine tuning", "finetuning", "model training", "ai model", "llm"], "AI fine-tuning / custom model workflow", "3 to 8 weeks", "₹1.5L - ₹6L+"]
   ].map(([name, words, fit, time, price]) => ({ name, words, fit, time, price }));
   const FEATURES = [
     ["website", "Website", ["website", "site", "landing", "pages", "responsive"]],
@@ -184,7 +184,7 @@
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   }
-  const norm = (v) => (v || "").toLowerCase().replace(/[^a-z0-9â‚¹+\s]/g, " ").replace(/\s+/g, " ").trim();
+  const norm = (v) => (v || "").toLowerCase().replace(/[^a-z0-9₹+\s]/g, " ").replace(/\s+/g, " ").trim();
   const has = (t, list) => list.some((w) => t.includes(w));
   const findIndustry = (text) => {
     const t = norm(text);
@@ -226,7 +226,7 @@
     return n;
   }
   const band = (n) => n < 3.5 ? ["Simple", "lean, fast, and focused"] : n < 6 ? ["Medium", "structured with a few moving parts"] : n < 9 ? ["Advanced", "multi-layer with integrations"] : ["Premium / custom AI", "strategic, multi-system, and tailored"];
-  const price = (n, p) => p?.name === "fine tuning" ? "â‚¹1.5L - â‚¹6L+" : p?.name === "mobile app" ? (n < 7 ? "â‚¹1L - â‚¹2.5L" : "â‚¹2L - â‚¹5L+") : p?.name === "ai automation" ? (n < 5 ? "â‚¹35k - â‚¹75k" : "â‚¹75k - â‚¹2L") : p?.name === "web app" ? (n < 6 ? "â‚¹50k - â‚¹1.5L" : "â‚¹1L - â‚¹3L+") : p?.name === "mvp" ? (n < 6 ? "â‚¹50k - â‚¹1.5L" : "â‚¹1L - â‚¹2.5L+") : n < 3.5 ? "â‚¹25k - â‚¹50k" : n < 6 ? "â‚¹50k - â‚¹1L" : n < 9 ? "â‚¹1L - â‚¹2.5L" : "â‚¹2.5L - â‚¹6L+";
+  const price = (n, p) => p?.name === "fine tuning" ? "₹1.5L - ₹6L+" : p?.name === "mobile app" ? (n < 7 ? "₹1L - ₹2.5L" : "₹2L - ₹5L+") : p?.name === "ai automation" ? (n < 5 ? "₹35k - ₹75k" : "₹75k - ₹2L") : p?.name === "web app" ? (n < 6 ? "₹50k - ₹1.5L" : "₹1L - ₹3L+") : p?.name === "mvp" ? (n < 6 ? "₹50k - ₹1.5L" : "₹1L - ₹2.5L+") : n < 3.5 ? "₹25k - ₹50k" : n < 6 ? "₹50k - ₹1L" : n < 9 ? "₹1L - ₹2.5L" : "₹2.5L - ₹6L+";
   const timeline = (n, p, fc) => p?.name === "fine tuning" ? "3 - 8 weeks" : p?.name === "mobile app" ? "4 - 10 weeks" : p?.name === "ai automation" ? (fc > 4 ? "2 - 5 weeks" : "1 - 3 weeks") : p?.name === "web app" ? (n < 6 ? "2 - 4 weeks" : "4 - 8 weeks") : p?.name === "mvp" ? (n < 6 ? "3 - 6 weeks" : "5 - 10 weeks") : n < 3.5 ? "3 days - 1.5 weeks" : n < 6 ? "1 - 3 weeks" : n < 9 ? "3 - 6 weeks" : "6 - 12+ weeks";
   const fitText = (profile) => profile.project?.fit || profile.industry?.fit || "Smart fit";
   const leadStageOrder = ["name", "email", "company", "requirement", "budget", "notes"];
@@ -240,10 +240,10 @@
   };
   const normalizeBudget = (text) => {
     const t = norm(text);
-    if (has(t, ["under", "50k", "â‚¹50k", "below 50k"])) return "Under â‚¹50k";
-    if (has(t, ["50k", "1l", "â‚¹50k - â‚¹1L", "50000", "1 lakh"])) return "â‚¹50k - â‚¹1L";
-    if (has(t, ["1l", "2l", "â‚¹1L - â‚¹2L", "100000", "2 lakh"])) return "â‚¹1L - â‚¹2L";
-    if (has(t, ["2l", "5l", "â‚¹2L+", "premium"])) return "â‚¹2L+";
+    if (has(t, ["under", "50k", "₹50k", "below 50k"])) return "Under ₹50k";
+    if (has(t, ["50k", "1l", "₹50k - ₹1L", "50000", "1 lakh"])) return "₹50k - ₹1L";
+    if (has(t, ["1l", "2l", "₹1L - ₹2L", "100000", "2 lakh"])) return "₹1L - ₹2L";
+    if (has(t, ["2l", "5l", "₹2L+", "premium"])) return "₹2L+";
     return text.trim();
   };
   const extractEmail = (text) => text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
@@ -678,7 +678,7 @@
     }
 
     const budget = normalizeBudget(t);
-    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "â‚¹"])) lead.budget = budget;
+    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "₹"])) lead.budget = budget;
     const industry = findIndustry(t) || state.profile.industry;
     if (scope === "website") {
       if (!lead.industry && industry) lead.industry = industry.name;
@@ -1188,7 +1188,7 @@
             kicker: "REVIX",
             tag: "EmailJS",
             title: "Brief sent to our team",
-            text: "Your structured project brief has been delivered to our team. We’ll review the scope and get back to you with the next step.",
+            text: "Your structured project brief has been delivered to our team. We'll review the scope and get back to you with the next step.",
             cards: [
               { label: "Status", value: "Sent", detail: "Delivered through the existing EmailJS flow." },
               { label: "Next", value: "Review", detail: "Our team will check the brief." },
@@ -1310,8 +1310,8 @@
       return {
         kicker: "Discovery",
         tag: "REVIX",
-        title: "Let’s map the build",
-        text: "Before I estimate anything, I need to understand what kind of build you’re planning. Tell me the project type, and I’ll start with the right question.",
+        title: "Let's map the build",
+        text: "Before I estimate anything, I need to understand what kind of build you're planning. Tell me the project type, and I'll start with the right question.",
         chips: DISCOVERY_CHIPS
       };
     }
@@ -1540,7 +1540,7 @@
           kicker: "REVIX",
           tag: "EmailJS",
           title: "Project brief sent successfully",
-          text: "Your project brief has been delivered to our team. We’ll review it and get back to you with the next step.",
+          text: "Your project brief has been delivered to our team. We'll review it and get back to you with the next step.",
           cards: [
             { label: "Status", value: "Sent", detail: "Delivered through the existing EmailJS flow." },
             { label: "Next", value: "Review", detail: "Our team will check the brief." },
@@ -1570,7 +1570,7 @@
       return {
         kicker: "Discovery",
         tag: "REVIX",
-        title: "Let’s narrow it down",
+        title: "Let's narrow it down",
         text: "I can help with websites, apps, AI systems, automation, and MVP planning. Tell me what you want to build, and I’ll ask the right discovery question instead of jumping to pricing too early.",
         cards: [
           { label: "What I do", value: "Scope first", detail: "Then estimate direction." },
@@ -1627,8 +1627,8 @@
       render("bot", {
         kicker: "REVIX",
         tag: "AI Business Assistant",
-        title: "Hi, I’m REVIX",
-        text: "Tell me what you’re planning to build, and I’ll map the smartest direction before we talk pricing.",
+        title: "Hi, I'm REVIX",
+        text: "Tell me what you're planning to build, and I'll map the smartest direction before we talk pricing.",
         chips: DISCOVERY_CHIPS
       });
       updateInsights(state.profile, "Ready", "Start discovery");
