@@ -11,6 +11,7 @@ const estimateTier = document.querySelector("#estimate-tier");
 const estimateRange = document.querySelector("#estimate-range");
 const estimateTimeline = document.querySelector("#estimate-timeline");
 const estimateSummary = document.querySelector("#estimate-summary");
+const heroShell = document.querySelector(".dashboard-shell");
 
 const featureLabels = {
   website: "Website",
@@ -291,4 +292,20 @@ featureChips.forEach((chip) => {
 });
 
 updateEstimate();
+
+if (heroShell) {
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let heroState = 0;
+  const applyHeroState = () => {
+    heroShell.dataset.heroState = String(heroState);
+  };
+  applyHeroState();
+
+  if (!reducedMotion.matches) {
+    window.setInterval(() => {
+      heroState = (heroState + 1) % 3;
+      applyHeroState();
+    }, 4800);
+  }
+}
 
