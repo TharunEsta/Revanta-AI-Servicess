@@ -1606,7 +1606,7 @@
     render("user", { text: clean });
     const reply = build(clean);
     showTyping(reply.why ? BRIEF_LABEL : THINKING_LABEL);
-    const delay = reply.why ? 760 : reply.cards?.length ? 520 : 380;
+    const delay = reply.why ? 220 : reply.cards?.length ? 160 : 120;
     setTimeout(() => {
       clearTyping();
       render("bot", reply);
