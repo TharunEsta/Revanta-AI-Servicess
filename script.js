@@ -6,34 +6,7 @@ const formStatus = document.querySelector(".form-status");
 const serviceNavItems = document.querySelectorAll(".service-nav-item");
 const faqSearch = document.querySelector("#faq-search");
 const faqItems = document.querySelectorAll(".faq-item");
-const featureChips = document.querySelectorAll(".feature-chip");
-const estimateTier = document.querySelector("#estimate-tier");
-const estimateRange = document.querySelector("#estimate-range");
-const estimateTimeline = document.querySelector("#estimate-timeline");
-const estimateSummary = document.querySelector("#estimate-summary");
 const heroShell = document.querySelector(".dashboard-shell");
-
-const featureLabels = {
-  website: "Website",
-  dashboard: "Dashboard",
-  auth: "Login / Auth",
-  ai: "AI Integration",
-  automation: "Automation",
-  payments: "Payments",
-  crm: "CRM",
-  mobile: "Mobile App"
-};
-
-const featureWeights = {
-  website: 1,
-  dashboard: 2,
-  auth: 1,
-  ai: 2,
-  automation: 2,
-  payments: 2,
-  crm: 2,
-  mobile: 3
-};
 
 const EMAILJS_PUBLIC_KEY = "jAlfgHRCxsV2_Mlrb";
 const EMAILJS_SERVICE_ID = "service_adwk38d";
@@ -248,84 +221,6 @@ if (faqSearch) {
   });
 }
 
-function updateEstimate() {
-  const activeFeatures = Array.from(featureChips)
-    .filter((chip) => chip.classList.contains("is-active"))
-    .map((chip) => chip.dataset.feature);
-
-  const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
-
-  let tier = "Starter";
-  let range = "₹25k - ₹50k";
-  let timeline = "2 - 4 weeks";
-
-  if (score >= 3 && score <= 4) {
-    tier = "Professional";
-    range = "₹50k - ₹1L";
-    timeline = "3 - 6 weeks";
-  } else if (score >= 5 && score <= 7) {
-    tier = "Professional+";
-    range = "₹1L - ₹2L";
-    timeline = "4 - 8 weeks";
-  } else if (score >= 8) {
-    tier = "Premium";
-    range = "₹2L+";
-    timeline = "6 - 12 weeks";
-  }
-
-  if (estimateTier) estimateTier.textContent = tier;
-  if (estimateRange) estimateRange.textContent = range;
-  if (estimateTimeline) estimateTimeline.textContent = timeline;
-  if (estimateSummary) {
-    estimateSummary.textContent = activeFeatures.map((feature) => featureLabels[feature]).join(", ") || "Website";
-  }
-}
-
-featureChips.forEach((chip) => {
-  chip.addEventListener("click", () => {
-    chip.classList.toggle("is-active");
-    if (!Array.from(featureChips).some((item) => item.classList.contains("is-active"))) {
-      chip.classList.add("is-active");
-    }
-    updateEstimate();
-  });
-});
-
-updateEstimate();
-
-function updateEstimate() {
-  const activeFeatures = Array.from(featureChips)
-    .filter((chip) => chip.classList.contains("is-active"))
-    .map((chip) => chip.dataset.feature);
-
-  const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
-
-  let tier = "Launch";
-  let range = "â‚¹75k - â‚¹1.5L";
-  let timeline = "2 - 4 weeks";
-
-  if (score >= 3 && score <= 4) {
-    tier = "Growth";
-    range = "â‚¹1.5L - â‚¹3L";
-    timeline = "4 - 6 weeks";
-  } else if (score >= 5 && score <= 7) {
-    tier = "Scale";
-    range = "â‚¹3L - â‚¹6L";
-    timeline = "6 - 10 weeks";
-  } else if (score >= 8) {
-    tier = "Custom / Product";
-    range = "â‚¹6L+";
-    timeline = "8 - 14 weeks";
-  }
-
-  if (estimateTier) estimateTier.textContent = tier;
-  if (estimateRange) estimateRange.textContent = range;
-  if (estimateTimeline) estimateTimeline.textContent = timeline;
-  if (estimateSummary) {
-    estimateSummary.textContent = activeFeatures.map((feature) => featureLabels[feature]).join(", ") || "Strategic website";
-  }
-}
-
 if (heroShell) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let heroState = 0;
@@ -339,39 +234,6 @@ if (heroShell) {
       heroState = (heroState + 1) % 3;
       applyHeroState();
     }, 4800);
-  }
-}
-
-function updateEstimate() {
-  const activeFeatures = Array.from(featureChips)
-    .filter((chip) => chip.classList.contains("is-active"))
-    .map((chip) => chip.dataset.feature);
-
-  const score = activeFeatures.reduce((sum, feature) => sum + (featureWeights[feature] || 0), 0);
-
-  let tier = "Launch";
-  let range = "₹75k - ₹1.5L";
-  let timeline = "2 - 4 weeks";
-
-  if (score >= 3 && score <= 4) {
-    tier = "Growth";
-    range = "₹1.5L - ₹3L";
-    timeline = "4 - 6 weeks";
-  } else if (score >= 5 && score <= 7) {
-    tier = "Scale";
-    range = "₹3L - ₹6L";
-    timeline = "6 - 10 weeks";
-  } else if (score >= 8) {
-    tier = "Custom / Product";
-    range = "₹6L+";
-    timeline = "8 - 14 weeks";
-  }
-
-  if (estimateTier) estimateTier.textContent = tier;
-  if (estimateRange) estimateRange.textContent = range;
-  if (estimateTimeline) estimateTimeline.textContent = timeline;
-  if (estimateSummary) {
-    estimateSummary.textContent = activeFeatures.map((feature) => featureLabels[feature]).join(", ") || "Strategic website";
   }
 }
 
@@ -398,10 +260,10 @@ setStagger(document.querySelectorAll(".process-grid .reveal"), 40, 100);
 setStagger(document.querySelectorAll(".contact-grid .reveal"), 40, 100);
 setStagger(document.querySelectorAll(".faq-layout .reveal"), 40, 90);
 setStagger(document.querySelectorAll(".service-detail-layout .reveal"), 40, 90);
-setStagger(document.querySelectorAll(".estimate-panel.reveal"), 90, 0);
 setStagger(document.querySelectorAll(".hero-visual.reveal"), 60, 0);
 setChildStagger(".hero-copy", 90);
 setChildStagger(".section-heading", 80);
 setChildStagger(".contact-intro", 80);
 setChildStagger(".faq-toolbar", 70);
+
 
