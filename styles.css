@@ -429,14 +429,14 @@ p { line-height: 1.7; color: var(--muted); }
 .faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.28s ease;
+  transition: max-height 0.12s ease;
 }
 .faq-answer p {
   margin: 0;
   padding: 0 24px 22px;
 }
 .faq-item.is-open .faq-answer {
-  max-height: 220px;
+  max-height: 180px;
 }
 .faq-item.is-open .faq-icon {
   background: rgba(49, 94, 251, 0.08);
