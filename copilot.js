@@ -79,6 +79,7 @@
       if (!raw) return {
         mode: "ask",
         minimized: false,
+        intent: "idle",
         profile: { industry: null, project: null, features: [] },
         lead: {
           name: "",
@@ -102,9 +103,33 @@
         leadStage: "idle"
       };
       const s = JSON.parse(raw);
+      const legacyStageMap = {
+        websiteSubtype: "intent_detected",
+        websiteGoal: "website_goal",
+        websiteFeatures: "website_features",
+        appPlatform: "intent_detected",
+        appAudience: "appAudience",
+        appFeatures: "appFeatures",
+        aiType: "intent_detected",
+        aiBusiness: "aiBusiness",
+        aiProcess: "aiProcess",
+        aiDepartment: "aiDepartment",
+        autoManual: "intent_detected",
+        autoChannel: "autoChannel",
+        autoTools: "autoTools"
+      };
+      const migratedStage = legacyStageMap[s.leadStage] || s.leadStage || "idle";
+      const migratedIntent = s.intent || (
+        ["websiteSubtype", "websiteGoal", "websiteFeatures"].includes(s.leadStage) ? "website" :
+        ["appPlatform", "appAudience", "appFeatures"].includes(s.leadStage) ? "mobile app" :
+        ["aiType", "aiBusiness", "aiProcess", "aiDepartment"].includes(s.leadStage) ? "ai automation" :
+        ["autoManual", "autoChannel", "autoTools"].includes(s.leadStage) ? "automation" :
+        "idle"
+      );
       return {
         mode: s.mode || "ask",
         minimized: !!s.minimized,
+        intent: migratedIntent,
         profile: { industry: s.profile?.industry || null, project: s.profile?.project || null, features: Array.isArray(s.profile?.features) ? s.profile.features : [] },
         lead: {
           name: s.lead?.name || "",
@@ -125,12 +150,13 @@
           why: s.lead?.why || "",
           userMessage: s.lead?.userMessage || ""
         },
-        leadStage: s.leadStage || "idle"
+        leadStage: migratedStage
       };
     } catch {
       return {
         mode: "ask",
         minimized: false,
+        intent: "idle",
         profile: { industry: null, project: null, features: [] },
         lead: {
           name: "",
@@ -389,11 +415,17 @@
     return "";
   };
   const discoveryQuestion = (field) => ({
-    websiteSubtype: "What type of website are you looking to build?",
-    websiteGoal: "What is the main goal of the website?",
-    websiteFeatures: "Do you need any of these inside it?",
-    appPlatform: "Is this for Android, iPhone, or both?",
-    appAudience: "Is it for customers or internal business use?",
+      website_type: "What type of website are you looking to build?",
+      intent_detected: "What type of website are you looking to build?",
+      websiteSubtype: "What type of website are you looking to build?",
+      website_goal: "What is the main goal of the website?",
+      websiteGoal: "What is the main goal of the website?",
+      website_features: "Do you need any of these inside it?",
+      websiteFeatures: "Do you need any of these inside it?",
+      website_ai_optional: "Do you want any AI features in this?",
+      websiteAiOptional: "Do you want any AI features in this?",
+      appPlatform: "Is this for Android, iPhone, or both?",
+      appAudience: "Is it for customers or internal business use?",
     appFeatures: "Which capabilities matter most?",
     aiType: "What kind of AI are you looking to build?",
     aiBusiness: "What business are you in?",
@@ -404,29 +436,66 @@
     autoTools: "What tools are you currently using?"
   }[field] || "Tell me a bit more about the project.");
   const discoveryOptions = (field) => ({
-    intro: [
-      { label: "Website", action: "reply", value: "I need a website" },
-      { label: "Mobile App", action: "reply", value: "I need an app" },
-      { label: "AI Automation", action: "reply", value: "I need AI automation" }
-    ],
-    websiteSubtype: [
-      { label: "Business Website", action: "reply", value: "Business website" },
-      { label: "SaaS / Web App", action: "reply", value: "SaaS web app" },
-      { label: "E-commerce", action: "reply", value: "E-commerce" }
-    ],
-    websiteGoal: [
-      { label: "Lead Capture", action: "reply", value: "Lead capture" },
-      { label: "Sales", action: "reply", value: "Sales" },
-      { label: "Bookings", action: "reply", value: "Bookings" }
-    ],
-    websiteFeatures: [
-      { label: "Login / Users", action: "reply", value: "Login and user accounts" },
-      { label: "Admin Dashboard", action: "reply", value: "Admin dashboard" },
-      { label: "Payments", action: "reply", value: "Payments and checkout" }
-    ],
-    appPlatform: [
-      { label: "Android", action: "reply", value: "Android" },
-      { label: "iPhone", action: "reply", value: "iPhone" },
+      intro: [
+        { label: "Website", action: "reply", value: "I need a website" },
+        { label: "Mobile App", action: "reply", value: "I need an app" },
+        { label: "AI Automation", action: "reply", value: "I need AI automation" }
+      ],
+      website_type: [
+        { label: "Business Website", action: "reply", value: "Business Website" },
+        { label: "Landing Page", action: "reply", value: "Landing Page" },
+        { label: "E-commerce", action: "reply", value: "E-commerce" },
+        { label: "SaaS / Dashboard", action: "reply", value: "SaaS / Dashboard" },
+        { label: "Portfolio", action: "reply", value: "Portfolio" }
+      ],
+      intent_detected: [
+        { label: "Business Website", action: "reply", value: "Business Website" },
+        { label: "Landing Page", action: "reply", value: "Landing Page" },
+        { label: "E-commerce", action: "reply", value: "E-commerce" },
+        { label: "SaaS / Dashboard", action: "reply", value: "SaaS / Dashboard" },
+        { label: "Portfolio", action: "reply", value: "Portfolio" }
+      ],
+      websiteSubtype: [
+        { label: "Business Website", action: "reply", value: "Business website" },
+        { label: "SaaS / Web App", action: "reply", value: "SaaS web app" },
+        { label: "E-commerce", action: "reply", value: "E-commerce" }
+      ],
+      website_goal: [
+        { label: "Lead generation", action: "reply", value: "Lead generation" },
+        { label: "Showcase company", action: "reply", value: "Showcase company" },
+        { label: "Sell products", action: "reply", value: "Sell products" },
+        { label: "Internal system", action: "reply", value: "Internal system" },
+        { label: "Something else", action: "reply", value: "Something else" }
+      ],
+      websiteGoal: [
+        { label: "Lead generation", action: "reply", value: "Lead generation" },
+        { label: "Showcase company", action: "reply", value: "Showcase company" },
+        { label: "Sell products", action: "reply", value: "Sell products" }
+      ],
+      website_features: [
+        { label: "Login / user accounts", action: "reply", value: "Login and user accounts" },
+        { label: "Admin dashboard", action: "reply", value: "Admin dashboard" },
+        { label: "Payment integration", action: "reply", value: "Payment integration" },
+        { label: "Forms / lead capture", action: "reply", value: "Forms and lead capture" },
+        { label: "API / integrations", action: "reply", value: "API integrations" }
+      ],
+      websiteFeatures: [
+        { label: "Login / Users", action: "reply", value: "Login and user accounts" },
+        { label: "Admin Dashboard", action: "reply", value: "Admin dashboard" },
+        { label: "Payments", action: "reply", value: "Payments and checkout" }
+      ],
+      website_ai_optional: [
+        { label: "Yes", action: "reply", value: "Yes, add AI features" },
+        { label: "No", action: "reply", value: "No AI features" },
+        { label: "Maybe later", action: "reply", value: "Maybe later" }
+      ],
+      websiteAiOptional: [
+        { label: "Yes", action: "reply", value: "Yes, add AI features" },
+        { label: "No", action: "reply", value: "No AI features" }
+      ],
+      appPlatform: [
+        { label: "Android", action: "reply", value: "Android" },
+        { label: "iPhone", action: "reply", value: "iPhone" },
       { label: "Both", action: "reply", value: "Both platforms" }
     ],
     appAudience: [
@@ -495,11 +564,11 @@
   };
   const progressText = () => {
     const step = state.leadStage;
-    if (step === "intro") return "Step 1 of 5 - Understanding your project";
-    if (step === "websiteSubtype" || step === "appPlatform" || step === "aiType" || step === "autoManual") return "Step 2 of 5 - Clarifying the project type";
-    if (step === "websiteGoal" || step === "appAudience" || step === "aiBusiness" || step === "autoChannel") return "Step 3 of 5 - Understanding the business goal";
-    if (step === "websiteFeatures" || step === "appFeatures" || step === "aiProcess" || step === "autoTools") return "Step 4 of 5 - Capturing key requirements";
-    if (step === "aiDepartment") return "Step 4 of 5 - Confirming the team focus";
+    if (step === "intro" || step === "intent_detected") return "Step 1 of 5 - Understanding your project";
+    if (step === "website_type" || step === "websiteSubtype" || step === "appPlatform" || step === "aiType" || step === "autoManual") return "Step 1 of 5 - Clarifying the project type";
+    if (step === "website_goal" || step === "websiteGoal" || step === "appAudience" || step === "aiBusiness" || step === "autoChannel") return "Step 2 of 5 - Understanding the business goal";
+    if (step === "website_features" || step === "websiteFeatures" || step === "appFeatures" || step === "aiProcess" || step === "autoTools") return "Step 3 of 5 - Capturing key requirements";
+    if (step === "website_ai_optional" || step === "websiteAiOptional" || step === "aiDepartment") return "Step 4 of 5 - Final check";
     if (step === "review") return "Step 5 of 5 - Reviewing the brief";
     if (step === "sent") return "Done - Brief sent";
     return "";
@@ -595,7 +664,7 @@
     { label: "Company", value: lead.company || "Pending", detail: lead.requirement || "Requirement needed" },
     { label: "Budget", value: lead.budget || "Pending", detail: lead.timeline || "Timeline inferred next" }
   ];
-  const syncLeadFromText = (text) => {
+  const syncLeadFromText = (text, scope = state.intent || "idle") => {
     const lead = state.lead;
     const t = text.trim();
     const email = extractEmail(t);
@@ -608,6 +677,87 @@
       if (company && company !== name) lead.company = company;
     }
 
+    const budget = normalizeBudget(t);
+    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "â‚¹"])) lead.budget = budget;
+    const industry = findIndustry(t) || state.profile.industry;
+    if (scope === "website") {
+      if (!lead.industry && industry) lead.industry = industry.name;
+      if (!lead.projectType) {
+        const subtype = detectWebsiteSubtype(t);
+        if (subtype) lead.projectType = subtype;
+      }
+      if (!lead.requirement) {
+        const goal = detectGoal(t);
+        if (goal) lead.requirement = goal;
+      }
+      const websiteFeatures = [];
+      if (has(norm(t), ["login", "user", "account", "accounts"])) websiteFeatures.push("Login / user accounts");
+      if (has(norm(t), ["admin", "dashboard", "panel"])) websiteFeatures.push("Admin dashboard");
+      if (has(norm(t), ["payment", "checkout", "stripe", "razorpay"])) websiteFeatures.push("Payment integration");
+      if (has(norm(t), ["form", "lead capture", "lead", "inquiry", "enquiry"])) websiteFeatures.push("Forms / lead capture");
+      if (has(norm(t), ["api", "integration", "integrations", "zapier", "make"])) websiteFeatures.push("API / integrations");
+      if (websiteFeatures.length) {
+        lead.features = Array.from(new Set([...(lead.features || []), ...websiteFeatures]));
+      }
+      lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
+      return lead;
+    }
+    if (scope === "mobile app") {
+      if (!lead.projectType) {
+        const platform = detectAppPlatform(t);
+        if (platform) lead.projectType = platform;
+      }
+      if (!lead.requirement) {
+        const audience = detectAppAudience(t);
+        if (audience) lead.requirement = audience;
+      }
+      const appFeatures = [];
+      if (has(norm(t), ["login", "user", "account", "accounts"])) appFeatures.push("Login / user accounts");
+      if (has(norm(t), ["admin", "dashboard", "panel"])) appFeatures.push("Admin panel");
+      if (has(norm(t), ["payment", "checkout", "stripe", "razorpay", "subscription"])) appFeatures.push("Payments / subscriptions");
+      if (has(norm(t), ["api", "integration", "integrations", "sync"])) appFeatures.push("API / integrations");
+      if (appFeatures.length) {
+        lead.features = Array.from(new Set([...(lead.features || []), ...appFeatures]));
+      }
+      lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
+      return lead;
+    }
+    if (scope === "ai automation" || scope === "fine tuning") {
+      if (!lead.projectType) {
+        const type = detectAIType(t);
+        if (type) lead.projectType = type;
+      }
+      if (!lead.industry) {
+        const business = detectAIBusiness(t) || industry?.name || "";
+        if (business) lead.industry = business;
+      }
+      if (!lead.requirement) {
+        const process = detectAIProcess(t);
+        if (process) lead.requirement = process;
+      }
+      if (!lead.department) {
+        const department = detectAIDepartment(t);
+        if (department) lead.department = department;
+      }
+      lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
+      return lead;
+    }
+    if (scope === "automation") {
+      if (!lead.requirement) {
+        const manual = detectAutomationManual(t);
+        if (manual) lead.requirement = manual;
+      }
+      if (!lead.channel) {
+        const channel = detectAutomationChannel(t);
+        if (channel) lead.channel = channel;
+      }
+      const tools = detectAutomationTools(t);
+      if (tools.length) {
+        lead.tools = Array.from(new Set([...(lead.tools || []), ...tools]));
+      }
+      lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
+      return lead;
+    }
     const project = findProject(t) || state.profile.project;
     if (project) {
       if (project.name === "website") {
@@ -642,9 +792,6 @@
         lead.requirement = detectGoal(t);
       }
     }
-    const budget = normalizeBudget(t);
-    if (!lead.budget && has(norm(t), ["50k", "1l", "2l", "budget", "â‚¹"])) lead.budget = budget;
-    const industry = findIndustry(t) || state.profile.industry;
     if (!lead.industry) {
       if (project?.name === "ai automation" || project?.name === "fine tuning") {
         lead.industry = detectAIBusiness(t) || industry?.name || "";
@@ -662,8 +809,14 @@
       const tools = detectAutomationTools(t);
       if (tools.length) lead.tools = Array.from(new Set([...(lead.tools || []), ...tools]));
     }
-    lead.features = Array.from(new Set([...(lead.features || []), ...featureScope(state.profile, t)]));
-    lead.aiSuggestions = Array.from(new Set([...(lead.aiSuggestions || []), ...aiIdeas(industry, t)]));
+    const features = scope === "website" ? [] : featureScope(state.profile, t);
+    if (features.length) {
+      lead.features = Array.from(new Set([...(lead.features || []), ...features]));
+    }
+    const ideas = scope === "website" ? [] : aiIdeas(industry, t);
+    if (ideas.length) {
+      lead.aiSuggestions = Array.from(new Set([...(lead.aiSuggestions || []), ...ideas]));
+    }
     lead.userMessage = [lead.userMessage, t].filter(Boolean).join("\n");
     return lead;
   };
@@ -672,7 +825,7 @@
     const projectType = lead.projectType || state.profile.project?.fit || "Custom digital build";
     const complexity = lead.complexity || band(complexityScore(state.profile, lead.userMessage || "")).join(" - ");
     const timelineValue = lead.timeline || timeline(complexityScore(state.profile, lead.userMessage || ""), state.profile.project, lead.features.length || state.profile.features.length);
-    const aiSuggestions = lead.aiSuggestions?.length ? lead.aiSuggestions : aiIdeas(state.profile.industry, lead.userMessage || "");
+    const aiSuggestions = lead.aiSuggestions?.length ? lead.aiSuggestions : (state.intent === "website" ? [] : aiIdeas(state.profile.industry, lead.userMessage || ""));
     const summary = lead.summary || buildLeadSummary({
       company: lead.company,
       projectType,
@@ -761,9 +914,14 @@
     };
   };
   const leadStageNext = {
-    websiteSubtype: "websiteGoal",
-    websiteGoal: "websiteFeatures",
-    websiteFeatures: "review",
+    website_type: "website_goal",
+    websiteSubtype: "website_goal",
+    website_goal: "website_features",
+    websiteGoal: "website_features",
+    website_features: "website_ai_optional",
+    websiteFeatures: "website_ai_optional",
+    website_ai_optional: "review",
+    websiteAiOptional: "review",
     appPlatform: "appAudience",
     appAudience: "appFeatures",
     appFeatures: "review",
@@ -775,9 +933,101 @@
     autoChannel: "autoTools",
     autoTools: "review"
   };
+  const INTENT_PROJECTS = {
+    website: { name: "website", fit: "Business Website" },
+    "mobile app": { name: "mobile app", fit: "Mobile App" },
+    "ai automation": { name: "ai automation", fit: "AI Automation" },
+    "fine tuning": { name: "fine tuning", fit: "AI Fine-Tuning" },
+    automation: { name: "automation", fit: "Automation" }
+  };
+  const INTENT_START_STAGES = {
+    website: "intent_detected",
+    "mobile app": "intent_detected",
+    "ai automation": "intent_detected",
+    "fine tuning": "intent_detected",
+    automation: "intent_detected"
+  };
+  const intentStageChain = {
+    website: ["website_type", "website_goal", "website_features", "website_ai_optional"],
+    "mobile app": ["appPlatform", "appAudience", "appFeatures"],
+    "ai automation": ["aiType", "aiBusiness", "aiProcess", "aiDepartment"],
+    "fine tuning": ["aiType", "aiBusiness", "aiProcess", "aiDepartment"],
+    automation: ["autoManual", "autoChannel", "autoTools"]
+  };
+  const clearProjectFields = () => {
+    state.lead.projectType = "";
+    state.lead.requirement = "";
+    state.lead.features = [];
+    state.lead.aiSuggestions = [];
+    state.lead.department = "";
+    state.lead.channel = "";
+    state.lead.tools = [];
+    state.lead.timeline = "";
+    state.lead.complexity = "";
+    state.lead.summary = "";
+    state.lead.why = "";
+  };
+  const startIntentFlow = (intent) => {
+    state.intent = intent;
+    state.profile.project = INTENT_PROJECTS[intent] || state.profile.project || null;
+    state.profile.features = [];
+    clearProjectFields();
+    state.leadStage = INTENT_START_STAGES[intent] || "intent_detected";
+    save();
+  };
+  const intentReadyForSummary = (intent) => {
+    const lead = state.lead;
+    if (intent === "website") return !!lead.projectType && !!lead.requirement && Array.isArray(lead.features) && lead.features.length > 0;
+    if (intent === "mobile app") return !!lead.projectType && !!lead.requirement && Array.isArray(lead.features) && lead.features.length > 0;
+    if (intent === "ai automation" || intent === "fine tuning") return !!lead.projectType && !!lead.industry && !!lead.requirement && !!lead.department;
+    if (intent === "automation") return !!lead.requirement && !!lead.channel && Array.isArray(lead.tools) && lead.tools.length > 0;
+    return false;
+  };
+  const intentNextMissingStage = (intent) => {
+    const lead = state.lead;
+    const chain = intentStageChain[intent] || [];
+    if (intent === "website") {
+      if (!lead.projectType) return "website_type";
+      if (!lead.requirement) return "website_goal";
+      if (!Array.isArray(lead.features) || !lead.features.length) return "website_features";
+      if (state.leadStage !== "website_ai_optional" && state.leadStage !== "review") return "website_ai_optional";
+      return "review";
+    }
+    if (intent === "mobile app") {
+      if (!lead.projectType) return "appPlatform";
+      if (!lead.requirement) return "appAudience";
+      if (!Array.isArray(lead.features) || !lead.features.length) return "appFeatures";
+      return "review";
+    }
+    if (intent === "ai automation" || intent === "fine tuning") {
+      if (!lead.projectType) return "aiType";
+      if (!lead.industry) return "aiBusiness";
+      if (!lead.requirement) return "aiProcess";
+      if (!lead.department) return "aiDepartment";
+      return "review";
+    }
+    if (intent === "automation") {
+      if (!lead.requirement) return "autoManual";
+      if (!lead.channel) return "autoChannel";
+      if (!Array.isArray(lead.tools) || !lead.tools.length) return "autoTools";
+      return "review";
+    }
+    return chain[0] || "review";
+  };
+  const activeIntent = () => (state.intent && state.intent !== "idle" ? state.intent : "");
   const captureStageAnswer = (stage, text, lead) => {
     const t = text.trim();
     switch (stage) {
+      case "website_type": {
+        let subtype = "";
+        if (has(t, ["business"])) subtype = "Business Website";
+        else if (has(t, ["landing"])) subtype = "Landing Page";
+        else if (has(t, ["ecommerce", "e-commerce", "store", "shop"])) subtype = "E-commerce";
+        else if (has(t, ["saas", "dashboard", "web app", "portal", "admin"])) subtype = "SaaS / Dashboard";
+        else if (has(t, ["portfolio"])) subtype = "Portfolio";
+        if (subtype) { lead.projectType = subtype; return true; }
+        return false;
+      }
       case "websiteSubtype": {
         let subtype = "";
         if (has(t, ["business"])) subtype = "Business Website";
@@ -795,8 +1045,26 @@
         if (goal) { lead.requirement = goal; return true; }
         return false;
       }
+      case "website_goal": {
+        const goal = detectGoal(t) || (has(t, ["lead generation"]) ? "Lead generation" : has(t, ["showcase"]) ? "Showcase company" : has(t, ["sell"]) ? "Sell products" : has(t, ["internal"]) ? "Internal system" : has(t, ["something else"]) ? "Something else" : "");
+        if (goal) { lead.requirement = goal; return true; }
+        return false;
+      }
       case "websiteFeatures": {
         const features = featureScope(state.profile, t);
+        if (features.length) {
+          lead.features = Array.from(new Set([...(lead.features || []), ...features]));
+          return true;
+        }
+        return false;
+      }
+      case "website_features": {
+        const features = [];
+        if (has(t, ["login", "user", "account", "accounts"])) features.push("Login / user accounts");
+        if (has(t, ["admin", "dashboard", "panel"])) features.push("Admin dashboard");
+        if (has(t, ["payment", "checkout", "stripe", "razorpay"])) features.push("Payment integration");
+        if (has(t, ["form", "lead capture", "lead", "inquiry", "enquiry"])) features.push("Forms / lead capture");
+        if (has(t, ["api", "integration", "integrations", "zapier", "make"])) features.push("API / integrations");
         if (features.length) {
           lead.features = Array.from(new Set([...(lead.features || []), ...features]));
           return true;
@@ -855,6 +1123,26 @@
         const tools = detectAutomationTools(t);
         if (tools.length) {
           lead.tools = Array.from(new Set([...(lead.tools || []), ...tools]));
+          return true;
+        }
+        return false;
+      }
+      case "website_ai_optional": {
+        if (has(t, ["yes", "sure", "okay", "ok", "add ai", "want ai"])) {
+          lead.aiSuggestions = Array.from(new Set([...(lead.aiSuggestions || []), "AI features requested"]));
+          return true;
+        }
+        if (has(t, ["no", "none", "not now", "later", "maybe later"])) {
+          return true;
+        }
+        return false;
+      }
+      case "websiteAiOptional": {
+        if (has(t, ["yes", "sure", "okay", "ok", "add ai", "want ai"])) {
+          lead.aiSuggestions = Array.from(new Set([...(lead.aiSuggestions || []), "AI features requested"]));
+          return true;
+        }
+        if (has(t, ["no", "none", "not now", "later", "maybe later"])) {
           return true;
         }
         return false;
@@ -962,15 +1250,42 @@
     return Promise.resolve();
   };
   const leadBranch = (text) => {
-    const lead = syncLeadFromText(text);
+    const currentIntent = activeIntent();
+    const lead = syncLeadFromText(text, currentIntent || "all");
     const stage = state.leadStage;
-    if (stage && stage !== "idle" && stage !== "intro" && stage !== "review" && stage !== "sent") {
-      const answered = captureStageAnswer(stage, text, lead);
+
+    if (currentIntent) {
+      const currentStage = stage === "intent_detected" ? intentNextMissingStage(currentIntent) : stage;
+      const normalizedStage = currentStage || intentNextMissingStage(currentIntent);
+
+      if (normalizedStage === "review") {
+        if (intentReadyForSummary(currentIntent)) {
+          lead.timeline = lead.timeline || timeline(complexityScore(state.profile, text), state.profile.project, lead.features.length || state.profile.features.length);
+          lead.complexity = lead.complexity || band(complexityScore(state.profile, text))[0];
+          lead.summary = buildLeadSummary(leadPayloadForEmail());
+          setQuickReplies(discoveryOptions("review"));
+          return leadReview();
+        }
+        const fallback = intentNextMissingStage(currentIntent);
+        state.leadStage = fallback;
+        save();
+        setQuickReplies(discoveryOptions(fallback));
+        return leadPrompt(fallback);
+      }
+
+      const answered = captureStageAnswer(normalizedStage, text, lead);
       if (answered) {
-        const nextStage = leadStageNext[stage] || "review";
+        const nextStage = intentNextMissingStage(currentIntent);
         state.leadStage = nextStage;
         save();
         if (nextStage === "review") {
+          if (!intentReadyForSummary(currentIntent)) {
+            const fallback = intentNextMissingStage(currentIntent);
+            state.leadStage = fallback;
+            save();
+            setQuickReplies(discoveryOptions(fallback));
+            return leadPrompt(fallback);
+          }
           lead.timeline = lead.timeline || timeline(complexityScore(state.profile, text), state.profile.project, lead.features.length || state.profile.features.length);
           lead.complexity = lead.complexity || band(complexityScore(state.profile, text))[0];
           lead.summary = buildLeadSummary(leadPayloadForEmail());
@@ -980,13 +1295,16 @@
         setQuickReplies(discoveryOptions(nextStage));
         return leadPrompt(nextStage);
       }
-      setQuickReplies(discoveryOptions(stage));
-      return leadPrompt(stage);
+
+      setQuickReplies(discoveryOptions(normalizedStage));
+      return leadPrompt(normalizedStage);
     }
+
     const project = state.profile.project || findProject(text);
     const broad = detectBroadIntent(text) || project?.name || "";
     if (!broad) {
       state.leadStage = "intro";
+      state.intent = "idle";
       save();
       setQuickReplies(discoveryOptions("intro"));
       return {
@@ -998,99 +1316,37 @@
       };
     }
     if (broad === "website") {
-      if (!lead.projectType || lead.projectType === "Website") {
-        state.leadStage = "websiteSubtype";
-        save();
-        setQuickReplies(discoveryOptions("websiteSubtype"));
-        return leadPrompt("websiteSubtype");
-      }
-      if (!lead.requirement) {
-        state.leadStage = "websiteGoal";
-        save();
-        setQuickReplies(discoveryOptions("websiteGoal"));
-        return leadPrompt("websiteGoal");
-      }
-      if (!(lead.features || []).length) {
-        state.leadStage = "websiteFeatures";
-        save();
-        setQuickReplies(discoveryOptions("websiteFeatures"));
-        return leadPrompt("websiteFeatures");
-      }
+      startIntentFlow("website");
+      setQuickReplies(discoveryOptions("website_type"));
+      return leadPrompt("website_type");
     }
     if (broad === "mobile app") {
-      if (!lead.projectType || lead.projectType === "Mobile App") {
-        state.leadStage = "appPlatform";
-        save();
-        setQuickReplies(discoveryOptions("appPlatform"));
-        return leadPrompt("appPlatform");
-      }
-      if (!lead.requirement) {
-        state.leadStage = "appAudience";
-        save();
-        setQuickReplies(discoveryOptions("appAudience"));
-        return leadPrompt("appAudience");
-      }
-      if (!(lead.features || []).length) {
-        state.leadStage = "appFeatures";
-        save();
-        setQuickReplies(discoveryOptions("appFeatures"));
-        return leadPrompt("appFeatures");
-      }
+      startIntentFlow("mobile app");
+      setQuickReplies(discoveryOptions("appPlatform"));
+      return leadPrompt("appPlatform");
     }
     if (broad === "ai automation" || broad === "fine tuning") {
-      if (!lead.projectType || lead.projectType === "AI Automation" || lead.projectType === "Fine-Tuning") {
-        state.leadStage = "aiType";
-        save();
-        setQuickReplies(discoveryOptions("aiType"));
-        return leadPrompt("aiType");
-      }
-      if (!lead.industry) {
-        state.leadStage = "aiBusiness";
-        save();
-        setQuickReplies(discoveryOptions("aiBusiness"));
-        return leadPrompt("aiBusiness");
-      }
-      if (!lead.requirement) {
-        state.leadStage = "aiProcess";
-        save();
-        setQuickReplies(discoveryOptions("aiProcess"));
-        return leadPrompt("aiProcess");
-      }
-      if (!lead.department) {
-        state.leadStage = "aiDepartment";
-        save();
-        setQuickReplies(discoveryOptions("aiDepartment"));
-        return leadPrompt("aiDepartment");
-      }
+      startIntentFlow(broad);
+      setQuickReplies(discoveryOptions("aiType"));
+      return leadPrompt("aiType");
     }
     if (broad === "automation") {
-      if (!lead.requirement) {
-        state.leadStage = "autoManual";
-        save();
-        setQuickReplies(discoveryOptions("autoManual"));
-        return leadPrompt("autoManual");
-      }
-      if (!lead.channel) {
-        state.leadStage = "autoChannel";
-        save();
-        setQuickReplies(discoveryOptions("autoChannel"));
-        return leadPrompt("autoChannel");
-      }
-      if (!(lead.tools || []).length) {
-        state.leadStage = "autoTools";
-        save();
-        setQuickReplies(discoveryOptions("autoTools"));
-        return leadPrompt("autoTools");
-      }
+      startIntentFlow("automation");
+      setQuickReplies(discoveryOptions("autoManual"));
+      return leadPrompt("autoManual");
     }
 
-    lead.timeline = lead.timeline || timeline(complexityScore(state.profile, text), state.profile.project, lead.features.length || state.profile.features.length);
-    lead.complexity = lead.complexity || band(complexityScore(state.profile, text))[0];
-    lead.summary = buildLeadSummary(leadPayloadForEmail());
-    state.leadStage = "review";
+    state.intent = broad;
+    state.leadStage = "intro";
     save();
-    setQuickReplies(discoveryOptions("review"));
-    return leadReview();
+    return {
+      kicker: "Discovery",
+      tag: "REVIX",
+      title: "Let's map the build",
+      text: "Before I estimate anything, I need to understand the project direction properly.",
+      cards: discoveryCards(),
+      chips: DISCOVERY_CHIPS
+    };
   };
   const renderCard = (label, value, detail) => {
     const d = document.createElement("div");
@@ -1259,16 +1515,18 @@
   const build = (text) => {
     const t = norm(text);
     const industry = findIndustry(text) || state.profile.industry || null;
-    const project = findProject(text) || state.profile.project || null;
+    const project = activeIntent() ? (INTENT_PROJECTS[state.intent] || state.profile.project || null) : (findProject(text) || state.profile.project || null);
     const feat = new Map(state.profile.features.map((x) => [x.key, x]));
-    findFeatures(text).forEach((x) => feat.set(x.key, x));
+    if (!activeIntent()) {
+      findFeatures(text).forEach((x) => feat.set(x.key, x));
+    }
     state.profile.features = Array.from(feat.values());
     if (industry) state.profile.industry = industry;
     if (project) state.profile.project = project;
 
     const broadIntent = detectBroadIntent(text);
     const serviceQuery = has(t, ["service", "services", "what do you do", "what can you do"]);
-    const leadFlowActive = !!(broadIntent || project || state.mode !== "ask" || state.leadStage !== "idle");
+    const leadFlowActive = !!(broadIntent || project || state.mode !== "ask" || state.leadStage !== "idle" || activeIntent());
 
     if (leadFlowActive) {
       const brief = leadBranch(text);
