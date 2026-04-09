@@ -19,6 +19,8 @@
   const complexity = el("#assistant-insight-complexity");
   const next = el("#assistant-insight-next");
   if (!launcher || !panel || !messages || !form || !input) return;
+  let pendingReplyTimer = 0;
+  let pendingReplySeq = 0;
 
   const KEY = "revanta-copilot-v1";
   const MODE = {
@@ -107,6 +109,7 @@
         websiteSubtype: "intent_detected",
         websiteGoal: "website_goal",
         websiteFeatures: "website_features",
+        websiteAiOptional: "website_ai_optional",
         appPlatform: "intent_detected",
         appAudience: "appAudience",
         appFeatures: "appFeatures",
@@ -1135,7 +1138,7 @@
         if (has(t, ["no", "none", "not now", "later", "maybe later"])) {
           return true;
         }
-        return false;
+        return !!t;
       }
       case "websiteAiOptional": {
         if (has(t, ["yes", "sure", "okay", "ok", "add ai", "want ai"])) {
@@ -1145,7 +1148,7 @@
         if (has(t, ["no", "none", "not now", "later", "maybe later"])) {
           return true;
         }
-        return false;
+        return !!t;
       }
       default:
         return false;
@@ -1584,6 +1587,12 @@
     const clean = (text || "").trim();
     if (!clean) return;
     const lower = norm(clean);
+    pendingReplySeq += 1;
+    const currentReplySeq = pendingReplySeq;
+    if (pendingReplyTimer) {
+      clearTimeout(pendingReplyTimer);
+      pendingReplyTimer = 0;
+    }
     if (has(lower, ["send to our team", "send brief", "send it", "send this"])) {
       showAssistantPanel();
       render("user", { text: clean });
@@ -1607,7 +1616,8 @@
     const reply = build(clean);
     showTyping(reply.why ? BRIEF_LABEL : THINKING_LABEL);
     const delay = reply.why ? 220 : reply.cards?.length ? 160 : 120;
-    setTimeout(() => {
+    pendingReplyTimer = setTimeout(() => {
+      if (currentReplySeq !== pendingReplySeq) return;
       clearTyping();
       render("bot", reply);
     }, delay);
