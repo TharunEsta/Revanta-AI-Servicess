@@ -865,13 +865,18 @@
               <div class="field-row">
                 <label>
                   <span>Name</span>
-                  <input type="text" name="name" placeholder="Your name" />
+                  <input type="text" name="name" placeholder="Your name" required />
                 </label>
                 <label>
                   <span>Email</span>
-                  <input type="email" name="email" placeholder="you@company.com" />
+                  <input type="email" name="email" placeholder="you@company.com" required />
                 </label>
-              </div>
+                <label>
+            <span>Phone</span>
+            <input type="tel" name="phone" placeholder="+91 9876543210" required />
+            </label>
+             
+          </div>
               <div class="field-row">
                 <label>
                   <span>Business / Company</span>
@@ -890,12 +895,12 @@
               </div>
               <label>
                 <span>Requirement</span>
-                <input type="text" name="requirement" placeholder="Website, AI automation, SaaS, dashboard, etc." />
+                <input type="text" name="requirement" placeholder="Website, AI automation, SaaS, dashboard, etc." required />
               </label>
               <label>
                 <span>Message</span>
                 <textarea
-                  name="message"
+                  name="message" required
                   rows="5"
                   placeholder="Tell us about your goals, timeline, and the type of system you'd like to build."
                 ></textarea>
