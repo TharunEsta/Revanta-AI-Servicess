@@ -1,17 +1,17 @@
 import { BusinessForm } from "@/components/business-form";
 
-export function ContactForm() {
+export function BookConsultationForm() {
   return (
     <BusinessForm
-      formType="contact"
-      title="Contact Form"
-      description="Send a direct message about your project, timeline, and the kind of support you need."
-      submitLabel="Send Message"
+      formType="bookConsultation"
+      title="Book Consultation"
+      description="Schedule a focused conversation about your goals, technical direction, and the best next step."
+      submitLabel="Book Consultation"
       fields={[
-        { name: "name", label: "Name", type: "text", placeholder: "Your name", required: true },
+        { name: "name", label: "Full Name", type: "text", placeholder: "Your full name", required: true },
         {
           name: "email",
-          label: "Email",
+          label: "Work Email",
           type: "email",
           placeholder: "you@company.com",
           required: true
@@ -20,20 +20,19 @@ export function ContactForm() {
         { name: "phone", label: "Phone", type: "tel", placeholder: "+91 90000 00000" },
         {
           name: "service",
-          label: "Service",
+          label: "Service Interest",
           type: "select",
           options: [
             { label: "AI Automation", value: "AI Automation" },
             { label: "SaaS Development", value: "SaaS Development" },
-            { label: "Mobile App Development", value: "Mobile App Development" },
+            { label: "MVP Development", value: "MVP Development" },
             { label: "Web Development", value: "Web Development" },
-            { label: "Custom Software", value: "Custom Software" },
-            { label: "CRM / ERP Solutions", value: "CRM / ERP Solutions" }
+            { label: "Custom Software", value: "Custom Software" }
           ]
         },
         {
           name: "budget",
-          label: "Budget",
+          label: "Budget Range",
           type: "select",
           options: [
             { label: "INR 1L - INR 3L", value: "INR 1L - INR 3L" },
@@ -43,10 +42,16 @@ export function ContactForm() {
           ]
         },
         {
-          name: "message",
-          label: "Project Details",
+          name: "preferredTime",
+          label: "Preferred Time",
+          type: "text",
+          placeholder: "Example: Weekdays after 3 PM IST"
+        },
+        {
+          name: "goals",
+          label: "Consultation Goals",
           type: "textarea",
-          placeholder: "Tell us what you want to build, your current bottlenecks, and the timeline.",
+          placeholder: "Tell us what you want to discuss, the current challenge, and what success looks like.",
           required: true,
           rows: 6
         }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { submitBusinessForm } from "@/lib/business-forms";
 
 export async function POST(request: Request) {
   try {
@@ -8,28 +9,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    const webhookUrl = process.env.LEAD_WEBHOOK_URL;
-    const webhookSecret = process.env.LEAD_WEBHOOK_SECRET;
+    const result = await submitBusinessForm("contact", body);
 
-    if (webhookUrl) {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(webhookSecret ? { Authorization: `Bearer ${webhookSecret}` } : {})
-        },
-        body: JSON.stringify({
-          source: "revantaai.com",
-          submittedAt: new Date().toISOString(),
-          ...body
-        })
-      });
-    } else {
-      console.log("Lead captured", body);
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Unable to process request." }, { status: 500 });
+    return NextResponse.json({ ok: true, message: result.successMessage });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to process request.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

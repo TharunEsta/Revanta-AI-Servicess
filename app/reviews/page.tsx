@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ReviewCard } from "@/components/review-card";
+import { ReviewRequestForm } from "@/components/review-request-form";
 import { StructuredData } from "@/components/structured-data";
 import { buildMetadata, reviewsPageSchema } from "@/lib/seo";
 import { getReviewsPageData, type ReviewSort } from "@/lib/reviews";
@@ -171,6 +172,34 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
               </Card>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="section pt-0">
+        <div className="shell grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+          <Card className="bg-slate-50">
+            <p className="text-sm uppercase tracking-[0.22em] text-slate-500">Future Review Requests</p>
+            <h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold text-slate-950">
+              Keep the review pipeline ready as projects are completed
+            </h2>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              This form helps Revanta AI capture future testimonial intent without exposing a public
+              review submission experience before it is needed.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                EmailJS delivery
+              </div>
+              <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                React state forms
+              </div>
+              <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                Review collection ready
+              </div>
+            </div>
+          </Card>
+
+          <ReviewRequestForm />
         </div>
       </section>
 

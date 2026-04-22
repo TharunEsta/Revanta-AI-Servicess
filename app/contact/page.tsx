@@ -1,4 +1,6 @@
+import { BookConsultationForm } from "@/components/book-consultation-form";
 import { ContactForm } from "@/components/contact-form";
+import { QuoteRequestForm } from "@/components/quote-request-form";
 import { Card, PageHero } from "@/components/ui";
 import { siteConfig } from "@/content/site";
 import { buildMetadata } from "@/lib/seo";
@@ -16,12 +18,12 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Contact"
         title="Start a premium project conversation with Revanta AI."
-        description="Share your scope, growth goals, and delivery timeline. Revanta AI is positioned to support serious builds for ambitious businesses."
+        description="Book a consultation, send a direct message, or request a detailed quote. Revanta AI is positioned to support serious builds for ambitious businesses."
       />
 
       <section className="section pt-8">
         <div className="shell grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <ContactForm />
+          <BookConsultationForm />
 
           <div className="grid gap-6">
             <Card>
@@ -62,6 +64,13 @@ export default function ContactPage() {
               </p>
             </Card>
           </div>
+        </div>
+      </section>
+
+      <section className="section pt-0">
+        <div className="shell grid gap-8 lg:grid-cols-2">
+          <ContactForm />
+          <QuoteRequestForm />
         </div>
       </section>
     </main>

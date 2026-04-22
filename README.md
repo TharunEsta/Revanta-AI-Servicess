@@ -28,11 +28,19 @@ npm run start
 
 ## Lead capture
 
-The contact form posts to `/api/contact`.
+Business forms are handled inside Next.js and sent through EmailJS.
+
+Active forms:
+
+- Book Consultation
+- Contact Form
+- Quote Request
+- Future Review Request
 
 Optional environment variables:
 
-- `LEAD_WEBHOOK_URL`: webhook endpoint for incoming leads
-- `LEAD_WEBHOOK_SECRET`: optional bearer token for the webhook
+- `EMAILJS_PUBLIC_KEY`
+- `EMAILJS_SERVICE_ID`
+- `EMAILJS_TEMPLATE_ID`
 
-If no webhook is configured, the API still returns success and logs the lead payload server-side so the site remains deployable without extra services.
+If these are not set, the project falls back to the migrated EmailJS values from the legacy site.
