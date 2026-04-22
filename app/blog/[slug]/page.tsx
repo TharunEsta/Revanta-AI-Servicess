@@ -3,12 +3,17 @@ import { blogPosts } from "@/content/site";
 import { buildMetadata } from "@/lib/seo";
 import { Card, PageHero } from "@/components/ui";
 
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
 export function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = blogPosts.find((item) => item.slug === params.slug);
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params;
+  const post = blogPosts.find((item) => item.slug === slug);
 
   if (!post) {
     return {};
@@ -21,8 +26,9 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
   });
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = blogPosts.find((item) => item.slug === params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = blogPosts.find((item) => item.slug === slug);
 
   if (!post) {
     notFound();
