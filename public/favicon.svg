@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="REVANTA favicon">
+  <defs>
+    <linearGradient id="bg" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1020" />
+      <stop offset="1" stop-color="#131b2f" />
+    </linearGradient>
+    <linearGradient id="accent" x1="18" y1="14" x2="48" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb24d" />
+      <stop offset="1" stop-color="#d66f14" />
+    </linearGradient>
+  </defs>
+  <path d="M17 8h30l9 9v30l-9 9H17l-9-9V17z" fill="url(#bg)" />
+  <path d="M22 18h11.6c7.2 0 11.8 3.7 11.8 9.7 0 4.1-2.2 7.1-6 8.6L46 45h-8.5l-6.7-8h-1.6V45h-7.2V18zm7.2 6.7v6.6h5.5c2.8 0 4.4-1.2 4.4-3.3s-1.6-3.3-4.4-3.3h-5.5z" fill="#fff" />
+  <path d="M30 32.2h7.4L46 45h-7.6z" fill="url(#accent)" />
+</svg>
