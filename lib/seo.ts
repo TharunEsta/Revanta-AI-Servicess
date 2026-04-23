@@ -5,7 +5,7 @@ type MetadataInput = {
   title: string;
   description: string;
   path?: string;
-  keywords?: string[];
+  keywords?: readonly string[];
 };
 
 export function absoluteUrl(path = "/") {
