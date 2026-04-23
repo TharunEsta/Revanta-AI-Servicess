@@ -7,14 +7,10 @@ type EmailTemplatePayload = {
   message: string;
 };
 
-function getPublicEnv(name: string) {
-  return process.env[name]?.trim() ?? "";
-}
-
 export const emailJsConfig = {
-  publicKey: getPublicEnv("NEXT_PUBLIC_EMAILJS_PUBLIC_KEY"),
-  serviceId: getPublicEnv("NEXT_PUBLIC_EMAILJS_SERVICE_ID"),
-  templateId: getPublicEnv("NEXT_PUBLIC_EMAILJS_TEMPLATE_ID")
+  publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY?.trim() ?? "",
+  serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID?.trim() ?? "",
+  templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID?.trim() ?? ""
 } as const;
 
 function assertEmailJsConfig() {
