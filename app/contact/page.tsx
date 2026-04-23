@@ -1,6 +1,4 @@
-import { BookConsultationForm } from "@/components/book-consultation-form";
 import { ContactForm } from "@/components/contact-form";
-import { QuoteRequestForm } from "@/components/quote-request-form";
 import { Card, PageHero } from "@/components/ui";
 import { siteConfig } from "@/content/site";
 import { buildMetadata } from "@/lib/seo";
@@ -23,7 +21,7 @@ export default function ContactPage() {
 
       <section className="section pt-8">
         <div className="shell grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <BookConsultationForm />
+          <ContactForm />
 
           <div className="grid gap-6">
             <Card>
@@ -44,12 +42,6 @@ export default function ContactPage() {
                 >
                   {siteConfig.salesEmail}
                 </a>
-                <a
-                  href={`mailto:${siteConfig.alternateSalesEmail}`}
-                  className="block text-lg text-slate-950 hover:text-slate-700"
-                >
-                  {siteConfig.alternateSalesEmail}
-                </a>
               </div>
             </Card>
 
@@ -63,14 +55,17 @@ export default function ContactPage() {
                 move from vague requirements to serious launch-ready systems.
               </p>
             </Card>
+            <Card>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">What to expect</p>
+              <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-[-0.04em]">
+                One clear form. One thoughtful response.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Use this single inquiry form for consultations, quotes, and project discussions.
+                It keeps the process cleaner and helps Revanta AI respond with better context.
+              </p>
+            </Card>
           </div>
-        </div>
-      </section>
-
-      <section className="section pt-0">
-        <div className="shell grid gap-8 lg:grid-cols-2">
-          <ContactForm />
-          <QuoteRequestForm />
         </div>
       </section>
     </main>

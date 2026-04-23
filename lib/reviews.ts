@@ -150,7 +150,8 @@ async function supabaseFetch<T>({
       Prefer: expectSingle ? "return=representation" : "return=minimal"
     },
     body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store"
+    cache: method === "GET" ? "force-cache" : "no-store",
+    next: method === "GET" ? { revalidate: 300 } : undefined
   });
 
   if (!response.ok) {

@@ -10,7 +10,7 @@ import {
 } from "@/content/site";
 import { ReviewCard } from "@/components/review-card";
 import { buildMetadata } from "@/lib/seo";
-import { getFeaturedReviews, getReviewsPageData } from "@/lib/reviews";
+import { getApprovedReviews } from "@/lib/reviews";
 import { Card, CtaBanner, PageHero, SectionIntro } from "@/components/ui";
 
 export const metadata = buildMetadata({
@@ -21,8 +21,25 @@ export const metadata = buildMetadata({
 });
 
 export default async function HomePage() {
-  const featuredReviews = await getFeaturedReviews(3);
-  const reviewSummary = await getReviewsPageData({ sort: "newest", page: 1, pageSize: 3 });
+  const approvedReviews = await getApprovedReviews();
+  const featuredReviews = [...approvedReviews]
+    .sort(
+      (left, right) =>
+        new Date(right.approvedAt ?? right.submittedAt).getTime() -
+        new Date(left.approvedAt ?? left.submittedAt).getTime()
+    )
+    .slice(0, 3);
+  const reviewSummary = {
+    totalCount: approvedReviews.length,
+    averageRating: approvedReviews.length
+      ? Number(
+          (
+            approvedReviews.reduce((sum, review) => sum + review.rating, 0) /
+            approvedReviews.length
+          ).toFixed(1)
+        )
+      : 0
+  };
 
   const resultAreas = [
     "Launch velocity",

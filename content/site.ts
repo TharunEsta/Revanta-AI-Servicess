@@ -5,7 +5,6 @@ export const siteConfig = {
     "Revanta AI helps ambitious businesses build AI automation systems, SaaS platforms, mobile apps, websites, internal tools, CRM systems, and custom software.",
   email: "hello@revantaai.com",
   salesEmail: "sales@revantaai.com",
-  alternateSalesEmail: "sales@revantaai.com",
   phone: "+91 9014719422",
   location: "Hyderabad, Telangana, India",
   keywords: [

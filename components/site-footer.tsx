@@ -46,10 +46,10 @@ export function SiteFooter() {
               {siteConfig.email}
             </a>
             <a
-              href={`mailto:${siteConfig.alternateSalesEmail}`}
+              href={`mailto:${siteConfig.salesEmail}`}
               className="block text-sm text-slate-600 hover:text-slate-950"
             >
-              {siteConfig.alternateSalesEmail}
+              {siteConfig.salesEmail}
             </a>
             <p className="text-sm text-slate-500">{siteConfig.location}</p>
           </div>
