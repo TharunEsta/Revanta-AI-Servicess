@@ -1,4 +1,4 @@
-import { sendEmailJsTemplate } from "@/lib/emailjs";
+import { formatMessageAsHtml, sendBusinessEmail } from "@/lib/resend";
 
 export type BusinessFormType =
   | "bookConsultation"
@@ -155,6 +155,20 @@ export function validateAndNormalizeFormPayload(
 
 export async function submitBusinessForm(formType: BusinessFormType, payload: FormSubmissionPayload) {
   const { templatePayload, successMessage } = validateAndNormalizeFormPayload(formType, payload);
-  await sendEmailJsTemplate(templatePayload);
+  await sendBusinessEmail({
+    subject: `${templatePayload.requirement || "Business Inquiry"} | ${templatePayload.name}`,
+    text: templatePayload.message,
+    html: `
+      <h2>${templatePayload.requirement || "Business Inquiry"}</h2>
+      <p><strong>Name:</strong> ${templatePayload.name}</p>
+      <p><strong>Email:</strong> ${templatePayload.email}</p>
+      <p><strong>Company:</strong> ${templatePayload.company || "Not provided"}</p>
+      <p><strong>Budget:</strong> ${templatePayload.budget || "Not provided"}</p>
+      <p><strong>Service / Requirement:</strong> ${templatePayload.requirement || "Not provided"}</p>
+      <p><strong>Message:</strong></p>
+      <p>${formatMessageAsHtml(templatePayload.message)}</p>
+    `,
+    replyTo: templatePayload.email
+  });
   return { successMessage };
 }
