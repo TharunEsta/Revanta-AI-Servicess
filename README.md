@@ -28,7 +28,7 @@ npm run start
 
 ## Lead capture
 
-Business forms are handled inside Next.js and sent through Resend from secure server routes.
+Business forms are handled on the client and sent through EmailJS.
 
 Active forms:
 
@@ -39,6 +39,6 @@ Active forms:
 
 Required production environment variables:
 
-- `RESEND_API_KEY`
-- `FORMS_NOTIFICATION_TO_EMAIL`
-- `FORMS_NOTIFICATION_FROM_EMAIL`
+- `NEXT_PUBLIC_EMAILJS_PUBLIC_KEY`
+- `NEXT_PUBLIC_EMAILJS_SERVICE_ID`
+- `NEXT_PUBLIC_EMAILJS_TEMPLATE_ID`

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { BusinessFormType } from "@/lib/business-forms";
+import {
+  type BusinessFormType,
+  validateAndNormalizeFormPayload
+} from "@/lib/business-forms";
+import { sendEmailJsTemplate } from "@/lib/emailjs";
 
 type FieldOption = {
   label: string;
@@ -83,26 +87,20 @@ export function BusinessForm({
     setState({ status: "loading", message: "Sending your request..." });
 
     try {
-      const response = await fetch("/api/forms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          formType,
-          ...values
-        })
-      });
-
-      const payload = (await response.json()) as { error?: string; message?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Unable to submit form.");
+      if (values.website) {
+        setState({
+          status: "success",
+          message: "Request submitted successfully."
+        });
+        return;
       }
+
+      const { templatePayload, successMessage } = validateAndNormalizeFormPayload(formType, values);
+      await sendEmailJsTemplate(templatePayload);
 
       setState({
         status: "success",
-        message: payload.message ?? "Request submitted successfully."
+        message: successMessage ?? "Request submitted successfully."
       });
       setValues(createInitialValues(fields));
     } catch (error) {

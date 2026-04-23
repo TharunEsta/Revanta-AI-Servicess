@@ -188,7 +188,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
-                Server-side email delivery
+                EmailJS delivery
               </div>
               <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
                 React state forms
