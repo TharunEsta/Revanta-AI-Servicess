@@ -5,7 +5,6 @@
 **Priority**: Branded SEO (Revanta AI) → Technical → Services → GSC/Bing
 
 ### Phase 1: Core Files (0/3)
-- [ ] Update index.html (title, metas, schema, alts, lazy)
 - [ ] Create sitemap.xml
 - [ ] Create robots.txt
 
@@ -18,4 +17,3 @@
 - [ ] Upload files to hosting
 - [ ] GSC/Bing submission + indexing request
 
-**Next**: Edit index.html
