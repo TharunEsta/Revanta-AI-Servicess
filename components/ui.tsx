@@ -95,11 +95,11 @@ export function CtaBanner() {
             <div className="max-w-2xl space-y-4">
               <span className="eyebrow">Next step</span>
               <h2 className="font-[var(--font-display)] text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
-                Ready for a website or system that feels worth more?
+                Ready to get more leads and save time?
               </h2>
               <p className="text-base leading-8 text-slate-600">
-                Revanta AI is built for ambitious teams that want premium positioning, faster
-                execution, and a cleaner path from idea to launch.
+                Revanta AI builds websites, automations, dashboards, and software that help teams
+                respond faster, reduce manual work, and run with more control.
               </p>
             </div>
             <div className="flex flex-wrap gap-4">

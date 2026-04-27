@@ -5,7 +5,7 @@ import { Card, CtaBanner, PageHero } from "@/components/ui";
 export const metadata = buildMetadata({
   title: "Case Studies",
   description:
-    "Explore anonymized case study structures from Revanta AI across AI automation, web development, and custom software.",
+    "Explore anonymized Revanta AI case studies across lead handling, websites, and internal software systems.",
   path: "/case-studies"
 });
 
@@ -14,8 +14,8 @@ export default function CaseStudiesPage() {
     <main>
       <PageHero
         eyebrow="Case studies"
-        title="Selected anonymized engagement patterns that show how Revanta AI thinks."
-        description="These case studies avoid fake namedrops and instead show the type of business problems, systems, and outcomes Revanta AI is designed to solve."
+        title="Examples of the business problems Revanta AI is built to solve."
+        description="These anonymized case studies show the kind of lead, workflow, and software problems we help teams fix."
       />
 
       <section className="section pt-8">

@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata = buildMetadata({
   title: "Contact",
   description:
-    "Book a consultation with Revanta AI for AI automation, SaaS development, websites, mobile apps, CRM ERP systems, and custom software.",
+    "Request a quote or start a project conversation with Revanta AI for websites, automation, dashboards, and custom software.",
   path: "/contact"
 });
 
@@ -15,8 +15,8 @@ export default function ContactPage() {
     <main>
       <PageHero
         eyebrow="Contact"
-        title="Start a premium project conversation with Revanta AI."
-        description="Book a consultation, send a direct message, or request a detailed quote. Revanta AI is positioned to support serious builds for ambitious businesses."
+        title="Start a project conversation with clear business context."
+        description="Share what you need to improve, what is slowing the team down, and what result you want from the build."
       />
 
       <section className="section pt-8">
@@ -48,21 +48,21 @@ export default function ContactPage() {
             <Card>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Working style</p>
               <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-[-0.04em]">
-                Calm, direct, premium, and business-focused.
+                Clear, direct, and built around the business goal.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Revanta AI is based in {siteConfig.location} and built to help founders and teams
-                move from vague requirements to serious launch-ready systems.
+                Revanta AI is based in {siteConfig.location} and works with founders and teams that
+                want faster communication, practical systems, and fewer delivery surprises.
               </p>
             </Card>
             <Card>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">What to expect</p>
               <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-[-0.04em]">
-                One clear form. One thoughtful response.
+                One clear form. One clear next step.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Use this single inquiry form for consultations, quotes, and project discussions.
-                It keeps the process cleaner and helps Revanta AI respond with better context.
+                Use this form for quotes, consultations, or project planning. You will get a more
+                useful response when the business goal, workflow, and timeline are clear upfront.
               </p>
             </Card>
           </div>

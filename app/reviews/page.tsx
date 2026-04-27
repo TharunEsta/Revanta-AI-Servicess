@@ -51,8 +51,8 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
 
       <PageHero
         eyebrow="Reviews"
-        title="Trusted by Businesses That Value Quality Execution"
-        description="Revanta AI helps founders and companies build premium software, automation systems, and scalable products."
+        title="Client Feedback & Project Reviews"
+        description="Feedback from businesses that worked with Revanta AI on websites, systems, and software."
         primaryCta={{ label: "Book Consultation", href: "/contact" }}
         secondaryCta={{ label: "Explore Services", href: "/services" }}
       />
@@ -145,14 +145,14 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
             ) : (
               <Card className="bg-slate-50">
                 <p className="text-sm uppercase tracking-[0.22em] text-slate-500">
-                  Trusted by Businesses That Value Quality Execution
+                  Founder-led work. Clear communication. Real follow-through.
                 </p>
                 <h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold text-slate-950">
-                  Premium delivery built for serious business outcomes
+                  Reviews will be added as client projects are completed
                 </h2>
                 <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-                  Revanta AI helps founders and companies build premium software, automation
-                  systems, and scalable products.
+                  Until then, the standard stays the same: practical systems, faster communication,
+                  and work built around the business outcome.
                 </p>
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
                   {[
@@ -180,11 +180,11 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
           <Card className="bg-slate-50">
             <p className="text-sm uppercase tracking-[0.22em] text-slate-500">Future Review Requests</p>
             <h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold text-slate-950">
-              Keep the review pipeline ready as projects are completed
+              Keep the review process ready for completed projects
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-600">
-              This form helps Revanta AI capture future testimonial intent without exposing a public
-              review submission experience before it is needed.
+              This form is for collecting future review requests once a client project is complete
+              and ready for written feedback.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">

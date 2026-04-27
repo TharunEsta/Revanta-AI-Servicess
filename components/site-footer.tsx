@@ -13,9 +13,8 @@ export function SiteFooter() {
               <span className="text-lg font-semibold tracking-tight text-slate-950">Revanta AI</span>
             </Link>
             <p className="max-w-xl text-sm leading-7 text-slate-600">
-              Revanta AI helps businesses build AI automation systems, SaaS platforms, mobile
-              apps, websites, internal tools, CRM systems, and custom software with a premium,
-              scalable execution standard.
+              Revanta AI builds websites, automation, dashboards, and software that help
+              businesses get more leads, save time, and run with more control.
             </p>
           </div>
 

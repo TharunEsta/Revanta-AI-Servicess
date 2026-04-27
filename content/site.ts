@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "Revanta AI",
   url: "https://revantaai.com",
   description:
-    "Revanta AI helps ambitious businesses build AI automation systems, SaaS platforms, mobile apps, websites, internal tools, CRM systems, and custom software.",
+    "Revanta AI helps businesses get more leads, save time, and run cleaner operations with custom websites, automation, dashboards, and software.",
   email: "hello@revantaai.com",
   salesEmail: "sales@revantaai.com",
   phone: "+91 9014719422",
@@ -45,32 +45,32 @@ export const navigation = [
 export const trustStrip = [
   {
     label: "Positioning",
-    value: "Trusted by founders, operators, and premium service brands that need stronger digital authority."
+    value: "For companies that need a stronger first impression and a clearer path from inquiry to sale."
   },
   {
     label: "Delivery",
-    value: "Founder-led communication keeps decisions fast, clear, and close to the real business goal."
+    value: "Founder-led communication keeps feedback loops short and decisions moving."
   },
   {
     label: "Build quality",
-    value: "Modern product-grade execution across websites, AI systems, internal tools, and growth infrastructure."
+    value: "Custom builds across websites, internal tools, dashboards, and automation workflows."
   },
   {
     label: "Fit",
-    value: "Best suited for businesses that value trust, speed, and high-quality presentation over cheap output."
+    value: "Best for teams that want serious execution, cleaner systems, and fewer manual bottlenecks."
   },
   {
     label: "Location",
-    value: "Based in Hyderabad, delivering globally with a premium remote-first workflow."
+    value: "Based in Hyderabad and working remotely with businesses that need fast, clear execution."
   }
 ];
 
 export const founderSection = {
   title: "Meet the Founder of Revanta AI",
   message:
-    "Revanta AI was built to close the gap between ambitious business goals and the weak digital execution many companies settle for. The focus is simple: deliver serious software, sharper positioning, and systems that genuinely help a company grow.",
+    "Revanta AI was built for companies that are tired of slow communication, generic delivery, and software that creates more work than it removes.",
   supporting:
-    "The company is intentionally founder-led so communication stays fast, strategy stays close to the business objective, and the final output feels premium instead of outsourced or generic.",
+    "Internal product work keeps the standard high. CareerForge was built as a live product concept with modern UI, authentication, payments, and full-stack workflows. That hands-on product experience leads to better decisions in client websites, systems, and software builds.",
   signature: "Tharun Esta",
   role: "Founder, Revanta AI"
 };
@@ -97,9 +97,9 @@ export const homepageMetrics = [
 export const differentiators = [
   {
     eyebrow: "Trust signal",
-    title: "Premium trust by design",
+    title: "A stronger first impression",
     description:
-      "A sharp product-company presentation, not an agency-style collection of generic sections and fake interface screenshots."
+      "Clear messaging, sharp design, and a cleaner buying path so the business looks more credible from the first visit."
   },
   {
     eyebrow: "Commercial focus",
@@ -109,15 +109,15 @@ export const differentiators = [
   },
   {
     eyebrow: "Technical standard",
-    title: "Modern engineering foundation",
+    title: "Clean technical decisions",
     description:
-      "Next.js, TypeScript, scalable UI patterns, clean metadata, and Vercel-ready deployment from day one."
+      "Clear architecture, maintainable code, and a setup that is easier to launch, update, and extend."
   },
   {
     eyebrow: "Buyer quality",
-    title: "High-ticket client fit",
+    title: "Built for serious buying conversations",
     description:
-      "The positioning, copy, and conversion paths are built to support serious conversations with premium clients in the Rs 1L to Rs 10L+ range."
+      "The site and system are designed to help you look more prepared, respond faster, and convert better-fit leads."
   },
   {
     eyebrow: "Operating model",
@@ -127,9 +127,9 @@ export const differentiators = [
   },
   {
     eyebrow: "Long-term value",
-    title: "Built to stay credible as you grow",
+    title: "Built to keep working as you grow",
     description:
-      "The structure, visuals, and technical setup are designed to support future pages, campaigns, case studies, and product expansion."
+      "The structure is easier to expand with new pages, campaigns, workflows, and internal systems as the business changes."
   }
 ];
 
@@ -137,7 +137,7 @@ export const founderPoints = [
   {
     title: "Founder-led discovery and strategy",
     description:
-      "The earliest project decisions are shaped around business goals, buyer trust, and the fastest path to a credible launch."
+      "Early decisions stay close to the business goal so the build solves the real bottleneck instead of creating extra layers."
   },
   {
     title: "Direct communication with decision-makers",
@@ -147,12 +147,12 @@ export const founderPoints = [
   {
     title: "Premium execution standards from scope to launch",
     description:
-      "Design, copy, UX, and technical delivery are held to a higher bar so the output feels polished before traffic starts arriving."
+      "Design, UX, copy, and development are handled with the same care you would expect from a product team, not a rushed vendor."
   },
   {
     title: "Built for companies that need credibility fast",
     description:
-      "Ideal for teams that need stronger authority, better presentation, and systems that make growth look more organized."
+      "Useful for teams that need better presentation, cleaner follow-up, and more control as demand grows."
   }
 ];
 
@@ -170,7 +170,7 @@ export const serviceHighlights = [
     href: "/saas-development",
     title: "SaaS Development",
     eyebrow: "Product platforms",
-    description: "Launch a premium SaaS product with the structure, UX, and engineering needed to scale.",
+    description: "Launch faster with a SaaS product built for clear UX, cleaner operations, and steady iteration.",
     outcomes: ["Launch faster", "Raise perceived value", "Build with product discipline"]
   },
   {
@@ -178,7 +178,7 @@ export const serviceHighlights = [
     href: "/mobile-app-development",
     title: "Mobile App Development",
     eyebrow: "iOS and Android",
-    description: "Deliver polished mobile experiences that improve usability and keep your brand feeling premium.",
+    description: "Build mobile experiences that are easier to use, easier to ship, and easier for customers to trust.",
     outcomes: ["Improve usability", "Reach mobile-first users", "Ship a sharper product"]
   },
   {
@@ -186,7 +186,7 @@ export const serviceHighlights = [
     href: "/web-development",
     title: "Web Development",
     eyebrow: "Web experiences",
-    description: "Turn your website into a stronger trust signal that attracts better leads and supports growth.",
+    description: "Turn your website into a clearer sales asset that attracts better leads and supports faster follow-up.",
     outcomes: ["Increase trust", "Drive better lead quality", "Strengthen search visibility"]
   },
   {
@@ -202,7 +202,7 @@ export const serviceHighlights = [
     href: "/crm-erp-solutions",
     title: "CRM / ERP Solutions",
     eyebrow: "Operational systems",
-    description: "Unify sales, delivery, and reporting into one system built around how your business actually works.",
+    description: "Bring sales, delivery, and reporting into one workflow so the business is easier to manage.",
     outcomes: ["Unify data", "Improve pipeline control", "Support scale"]
   },
   {
@@ -210,7 +210,7 @@ export const serviceHighlights = [
     href: "/mvp-development",
     title: "MVP Development for Startups",
     eyebrow: "Startup launch",
-    description: "Launch your first product faster with an MVP built for validation, clarity, and investor confidence.",
+    description: "Launch the first version faster so you can validate demand and learn without overbuilding.",
     outcomes: ["Validate faster", "Reduce launch risk", "Show real traction"]
   },
   {
@@ -218,7 +218,7 @@ export const serviceHighlights = [
     href: "/ui-ux-product-design",
     title: "UI/UX Product Design",
     eyebrow: "Product design",
-    description: "Make your product easier to use and more credible with thoughtful UX and premium UI design.",
+    description: "Make the product easier to use so people understand it faster and trust it sooner.",
     outcomes: ["Improve adoption", "Clarify journeys", "Raise perceived quality"]
   },
   {
@@ -226,7 +226,7 @@ export const serviceHighlights = [
     href: "/ai-chatbots",
     title: "AI Chatbots",
     eyebrow: "Conversational systems",
-    description: "Deploy smart chat experiences that handle support, lead capture, and common queries with less manual effort.",
+    description: "Handle support and lead capture faster without making the team answer the same questions all day.",
     outcomes: ["Respond faster", "Capture leads", "Reduce support load"]
   },
   {
@@ -250,7 +250,7 @@ export const serviceHighlights = [
     href: "/e-commerce-development",
     title: "E-commerce Development",
     eyebrow: "Commerce platforms",
-    description: "Build faster, cleaner online stores that improve trust, conversions, and repeat customer experience.",
+    description: "Build online stores that make buying easier, improve trust, and support repeat orders.",
     outcomes: ["Increase conversions", "Improve trust", "Support scale"]
   },
   {
@@ -274,7 +274,7 @@ export const serviceHighlights = [
     href: "/cloud-deployment-devops",
     title: "Cloud Deployment / DevOps",
     eyebrow: "Launch infrastructure",
-    description: "Deploy with confidence using cleaner environments, reliable releases, and scale-ready infrastructure.",
+    description: "Launch more reliably with cleaner environments, better release flow, and fewer avoidable issues.",
     outcomes: ["Launch smoothly", "Improve reliability", "Support growth"]
   },
   {
@@ -282,7 +282,7 @@ export const serviceHighlights = [
     href: "/technology-consulting",
     title: "Technology Consulting",
     eyebrow: "Strategic guidance",
-    description: "Make stronger technology decisions with product-minded guidance tied to business outcomes, not noise.",
+    description: "Make clearer product and technology decisions so the next build solves the right problem.",
     outcomes: ["Reduce decision waste", "Clarify priorities", "Choose the right roadmap"]
   }
 ] as const;
@@ -319,9 +319,9 @@ export const serviceDetails = {
     title: "SaaS Development",
     path: "/saas-development",
     summary:
-      "Premium SaaS development for founders and businesses building category-shaping products, platforms, and MVPs.",
+      "SaaS development for founders and teams that need a product they can launch, learn from, and improve with control.",
     intro:
-      "We help teams move from idea to a polished SaaS product with positioning-aware UX, scalable architecture, and a serious startup-grade feel.",
+      "We help teams move from idea to a working SaaS product with clear UX, clean structure, and a faster path to launch.",
     keywords: ["SaaS development company India", "MVP development India", "startup product development Hyderabad"],
     problems: [
       "The idea is strong but the product needs a real launch foundation",
@@ -341,7 +341,7 @@ export const serviceDetails = {
     title: "Mobile App Development",
     path: "/mobile-app-development",
     summary:
-      "Mobile app development for businesses and startups that need premium mobile experiences for customers and teams.",
+      "Mobile app development for businesses that need a smoother experience for customers, teams, or field staff.",
     intro:
       "Revanta AI builds mobile apps with careful attention to usability, performance, onboarding, and brand perception so the product feels ready for serious users.",
     keywords: ["mobile app development Hyderabad", "mobile app company India", "React Native app development India"],
@@ -363,9 +363,9 @@ export const serviceDetails = {
     title: "Web Development",
     path: "/web-development",
     summary:
-      "Premium web development for companies that need stronger credibility, better conversions, and a more serious digital presence.",
+      "Web development for companies that need a stronger online presence, better follow-up, and more qualified inquiries.",
     intro:
-      "We build marketing websites, lead generation experiences, product websites, portals, and web applications with a sharper product-company standard.",
+      "We build websites and web products that help businesses look more credible, explain the offer clearly, and convert more inquiries.",
     keywords: ["web development company India", "website development Hyderabad", "premium website design India"],
     problems: [
       "The current website undersells the business",
@@ -407,7 +407,7 @@ export const serviceDetails = {
     title: "CRM / ERP Solutions",
     path: "/crm-erp-solutions",
     summary:
-      "CRM and ERP solutions for businesses that want sharper sales operations, clearer reporting, and more connected execution.",
+      "CRM and ERP solutions for businesses that need better sales control, clearer reporting, and fewer disconnected workflows.",
     intro:
       "We design CRM and ERP experiences around your real process, from lead flow and pipeline visibility to approvals, delivery, and reporting.",
     keywords: ["CRM ERP solutions India", "CRM development Hyderabad", "custom ERP software India"],
@@ -451,7 +451,7 @@ export const serviceDetails = {
     title: "UI/UX Product Design",
     path: "/ui-ux-product-design",
     summary:
-      "UI/UX product design for startups and businesses that need cleaner journeys, stronger trust, and more usable digital experiences.",
+      "UI/UX design for teams that need clearer journeys, easier onboarding, and fewer points of friction.",
     intro:
       "Revanta AI designs interfaces and flows that help products feel easier to use, more premium to buyers, and more aligned with business goals.",
     keywords: ["UI UX design company India", "product design Hyderabad", "SaaS UX design India"],
@@ -539,7 +539,7 @@ export const serviceDetails = {
     title: "E-commerce Development",
     path: "/e-commerce-development",
     summary:
-      "E-commerce development for brands that want stronger trust, smoother buying journeys, and better conversion performance.",
+      "E-commerce development for brands that need better trust, easier buying, and a cleaner path to conversion.",
     intro:
       "Revanta AI builds e-commerce websites and commerce experiences that help products look more credible, checkout flows feel cleaner, and growth become easier to manage.",
     keywords: ["ecommerce development company India", "shopify development Hyderabad", "custom ecommerce website India"],
@@ -627,7 +627,7 @@ export const serviceDetails = {
     title: "Technology Consulting",
     path: "/technology-consulting",
     summary:
-      "Technology consulting for founders and businesses that need clearer product, platform, and software decisions tied to real business goals.",
+      "Technology consulting for founders and businesses that need clearer product and software decisions tied to business goals.",
     intro:
       "Revanta AI helps teams make smarter technology choices around architecture, tooling, roadmap, product direction, and digital execution quality.",
     keywords: ["technology consulting India", "software consulting Hyderabad", "startup technology advisor India"],
@@ -653,7 +653,7 @@ export const caseStudies = [
     title: "Lead Flow Modernization for a Service Business",
     category: "AI Automation",
     summary:
-      "An anonymized engagement focused on improving lead response speed, qualification quality, and follow-up consistency.",
+      "An anonymized project focused on faster lead response, cleaner qualification, and more consistent follow-up.",
     challenge:
       "Inbound leads were coming from multiple channels, but qualification, routing, and follow-up were still manual and inconsistent.",
     solution:
@@ -667,7 +667,7 @@ export const caseStudies = [
     title: "Product-Grade Website Rebuild for a Software Company",
     category: "Web Development",
     summary:
-      "A positioning-led website rebuild designed to move the brand from generic service look to premium product-company credibility.",
+      "A website rebuild designed to move the brand from generic presentation to clearer trust and stronger sales conversations.",
     challenge:
       "The original site looked functional but failed to communicate trust, depth, or clear differentiation to high-value buyers.",
     solution:
@@ -681,7 +681,7 @@ export const caseStudies = [
     title: "Internal Operations Platform for Multi-Step Delivery",
     category: "Custom Software",
     summary:
-      "A custom system approach for businesses that need better visibility across intake, approvals, execution, and reporting.",
+      "A custom system approach for businesses that needed better visibility across intake, approvals, execution, and reporting.",
     challenge:
       "Teams were using spreadsheets, chat threads, and ad hoc updates, which made delivery status and accountability hard to manage.",
     solution:

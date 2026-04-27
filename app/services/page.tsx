@@ -6,7 +6,7 @@ import { Card, CtaBanner, PageHero } from "@/components/ui";
 export const metadata = buildMetadata({
   title: "Services",
   description:
-    "Explore Revanta AI services across AI automation, SaaS development, MVP development, UI/UX design, web development, automation systems, and custom software.",
+    "Explore Revanta AI services across websites, automation, SaaS products, internal tools, dashboards, and custom software.",
   path: "/services"
 });
 
@@ -15,8 +15,8 @@ export default function ServicesPage() {
     <main>
       <PageHero
         eyebrow="Services"
-        title="A complete service architecture built for SEO, trust, and premium lead generation."
-        description="Explore the full Revanta AI service lineup, from product builds and automation systems to integrations, consulting, and long-term technical support."
+        title="Business systems built to increase revenue, save time, and scale cleanly."
+        description="Websites, automation, dashboards, and software built around the way your business actually works."
         primaryCta={{ label: "Book Consultation", href: "/contact" }}
       />
 
