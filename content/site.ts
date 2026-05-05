@@ -158,6 +158,102 @@ export const founderPoints = [
 
 export const serviceHighlights = [
   {
+    slug: "ai-automation-system",
+    href: "/ai-automation-system",
+    title: "AI Automation System",
+    eyebrow: "AI systems",
+    description: "Create a cleaner operating system with automation that reduces manual work and keeps execution moving.",
+    outcomes: ["Reduce manual work", "Improve response speed", "Create process discipline"]
+  },
+  {
+    slug: "whatsapp-booking-system",
+    href: "/whatsapp-booking-system",
+    title: "WhatsApp Booking System",
+    eyebrow: "Booking systems",
+    description: "Turn WhatsApp inquiries into confirmed bookings with less back-and-forth and faster response.",
+    outcomes: ["Increase bookings", "Respond faster", "Reduce scheduling effort"]
+  },
+  {
+    slug: "lead-follow-up-automation",
+    href: "/lead-follow-up-automation",
+    title: "Lead Follow-Up Automation",
+    eyebrow: "Sales automation",
+    description: "Protect more opportunities with faster lead response and a more consistent follow-up process.",
+    outcomes: ["Reduce lead loss", "Speed up follow-up", "Improve pipeline control"]
+  },
+  {
+    slug: "voice-ai-calling-system",
+    href: "/voice-ai-calling-system",
+    title: "Voice AI Calling System",
+    eyebrow: "Voice AI",
+    description: "Handle business calls more reliably with AI-powered call flows, routing, and qualification.",
+    outcomes: ["Cover more calls", "Qualify faster", "Reduce phone workload"]
+  },
+  {
+    slug: "crm-erp-system",
+    href: "/crm-erp-system",
+    title: "CRM ERP System",
+    eyebrow: "Business systems",
+    description: "Bring customer tracking, operations, and reporting into one connected system.",
+    outcomes: ["Unify operations", "Improve visibility", "Scale with more control"]
+  },
+  {
+    slug: "call-intelligence-platform",
+    href: "/call-intelligence-platform",
+    title: "Call Intelligence Platform",
+    eyebrow: "Call analytics",
+    description: "Turn sales and support calls into clearer insight for coaching, quality, and follow-up.",
+    outcomes: ["Improve call quality", "Coach better", "Gain conversation insight"]
+  },
+  {
+    slug: "knowledge-base-ai",
+    href: "/knowledge-base-ai",
+    title: "Knowledge Base AI",
+    eyebrow: "AI knowledge systems",
+    description: "Help teams and customers find the right answers faster from your existing business knowledge.",
+    outcomes: ["Answer faster", "Reduce repeat questions", "Improve consistency"]
+  },
+  {
+    slug: "document-processing-ai",
+    href: "/document-processing-ai",
+    title: "Document Processing AI",
+    eyebrow: "Document AI",
+    description: "Reduce manual document work and move applications, records, and paperwork through operations faster.",
+    outcomes: ["Speed up processing", "Reduce admin effort", "Improve accuracy"]
+  },
+  {
+    slug: "custom-software-development",
+    href: "/custom-software-development",
+    title: "Custom Software Development",
+    eyebrow: "Custom platforms",
+    description: "Build software around your real workflow instead of forcing your business into generic tools.",
+    outcomes: ["Fit your workflow", "Improve control", "Support long-term growth"]
+  },
+  {
+    slug: "hospital-appointment-system",
+    href: "/hospital-appointment-system",
+    title: "Hospital Appointment System",
+    eyebrow: "Healthcare systems",
+    description: "Improve patient booking, scheduling flow, and front-desk efficiency with a better appointment system.",
+    outcomes: ["Simplify booking", "Reduce manual scheduling", "Improve patient experience"]
+  },
+  {
+    slug: "real-estate-lead-management",
+    href: "/real-estate-lead-management",
+    title: "Real Estate Lead Management",
+    eyebrow: "Real estate systems",
+    description: "Track property leads, follow-up, and site visits with more speed and better sales visibility.",
+    outcomes: ["Respond faster", "Book more visits", "Track lead stages clearly"]
+  },
+  {
+    slug: "service-business-automation",
+    href: "/service-business-automation",
+    title: "Service Business Automation",
+    eyebrow: "Service operations",
+    description: "Automate lead handling, booking, reminders, and delivery workflows for service businesses.",
+    outcomes: ["Save time", "Improve follow-up", "Run cleaner operations"]
+  },
+  {
     slug: "ai-automation",
     href: "/ai-automation",
     title: "AI Automation",
