@@ -1,14 +1,14 @@
+import { CoreServicePage } from "@/components/core-service-page";
+import { coreServicePages } from "@/content/core-services";
 import { buildMetadata } from "@/lib/seo";
-import { serviceDetails } from "@/content/site";
-import { ServicePage } from "@/components/service-page";
 
 export const metadata = buildMetadata({
-  title: "AI Automation",
-  description: serviceDetails["ai-automation"].summary,
-  path: "/ai-automation",
-  keywords: serviceDetails["ai-automation"].keywords
+  title: coreServicePages["ai-automation"].metaTitle,
+  description: coreServicePages["ai-automation"].metaDescription,
+  path: coreServicePages["ai-automation"].path,
+  keywords: coreServicePages["ai-automation"].keywords
 });
 
 export default function AiAutomationPage() {
-  return <ServicePage slug="ai-automation" />;
+  return <CoreServicePage slug="ai-automation" />;
 }

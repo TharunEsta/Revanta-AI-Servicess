@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { blogPosts, serviceHighlights, siteConfig } from "@/content/site";
+import { coreServiceHighlights } from "@/content/core-services";
+import { blogPosts, siteConfig } from "@/content/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -22,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === "" ? 1 : route === "/contact" ? 0.9 : 0.8
   }));
 
-  const serviceRoutes = serviceHighlights.map((service) => ({
+  const serviceRoutes = coreServiceHighlights.map((service) => ({
     url: `${siteConfig.url}${service.href}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
