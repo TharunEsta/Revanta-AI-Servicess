@@ -197,9 +197,9 @@ export default function HomePage() {
       <PageHero
         eyebrow="Revanta AI"
         title="Automate bookings, leads and operations in days"
-        description="Revanta AI builds custom websites, booking systems, AI automations, dashboards, and software that help growing businesses save time and increase revenue."
+        description="Revanta AI builds custom websites, booking systems, AI automations, dashboards, software, and Revanta OS for teams that want more control and faster execution."
         primaryCta={{ label: "Request a Quote", href: "/contact" }}
-        secondaryCta={{ label: "Explore Solutions", href: "/services" }}
+        secondaryCta={{ label: "Explore Revanta OS", href: "/revanta-os" }}
       />
 
       <section className="-mt-8 pb-8 sm:-mt-10">
@@ -224,8 +224,8 @@ export default function HomePage() {
                   <Link href="/contact" className="button-secondary">
                     Book Consultation
                   </Link>
-                  <Link href="/contact" className="button-secondary">
-                    See Pricing
+                  <Link href="/revanta-os" className="button-secondary">
+                    See Revanta OS
                   </Link>
                 </div>
               </div>

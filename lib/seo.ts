@@ -22,7 +22,7 @@ export function buildMetadata({
   const canonical = absoluteUrl(path);
 
   return {
-    title: fullTitle,
+    title,
     description,
     keywords: [...siteConfig.keywords, ...keywords],
     alternates: {
@@ -93,6 +93,23 @@ export function serviceSchema(serviceName: string, description: string, path: st
     serviceType: serviceName,
     description,
     url: absoluteUrl(path)
+  };
+}
+
+export function softwareApplicationSchema(name: string, description: string, path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description,
+    url: absoluteUrl(path),
+    provider: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url
+    }
   };
 }
 
