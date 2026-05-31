@@ -1,19 +1,12 @@
-# Revanta AI Static SEO Optimization - TODO
+# TODO
 
-**Status**: In Progress (0/8)
-
-**Priority**: Branded SEO (Revanta AI) → Technical → Services → GSC/Bing
-
-### Phase 1: Core Files (0/3)
-- [ ] Create sitemap.xml
-- [ ] Create robots.txt
-
-### Phase 2: Content Tweaks (0/3)
-- [ ] H1/H2 keyword integration
-- [ ] Internal links/schema anchors
-- [ ] Footer/LocalBusiness enhancement
-
-### Phase 3: Deploy & Submit (0/2)
-- [ ] Upload files to hosting
-- [ ] GSC/Bing submission + indexing request
+- [ ] Rewrite `components/revops/RevOpsLeadsTable.tsx` in a single coherent pass.
+  - [ ] Remove legacy modal workflows (Assign Owner, Notes, Follow-up, Move Stage) completely.
+  - [ ] Keep only: Add Lead modal, Full Edit modal, Delete confirm modal.
+  - [ ] Implement inline row workflows: stage selector, owner dropdown, follow-up date input, quick notes editing.
+  - [ ] Add inline contact utilities: copy email/phone, open LinkedIn, open WhatsApp, mailto.
+  - [ ] Add compact latest-activity visibility derived from existing fields.
+  - [ ] Apply density refinement (tighter spacing / reduced row height).
+  - [ ] Ensure inline mutations refresh leads immediately and trigger activity/pipeline updates (via refreshTick + existing polling).
+- [ ] Run TypeScript/Next build or lint to confirm no undefined references remain.
 

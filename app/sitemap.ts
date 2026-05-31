@@ -10,13 +10,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/about",
     "/services",
     "/domain",
-    "/dashboard/domains",
-    "/dashboard/dns",
+    // Private RevOps routes removed from sitemap indexing.
     "/reviews",
     "/case-studies",
     "/contact",
     "/blog"
   ].map((route) => ({
+
     url: `${siteConfig.url}${route}`,
     lastModified: now,
     changeFrequency: "weekly" as const,

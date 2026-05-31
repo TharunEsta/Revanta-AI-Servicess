@@ -10,11 +10,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.11.0",
+    "lucide-react": "^1.14.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "reactflow": "^11.11.4",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
