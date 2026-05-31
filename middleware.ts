@@ -2,8 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/revanta-os/jwt";
 
+
 const SESSION_COOKIE = "revanta_session";
+const WHATSAPP_WEBHOOK_PATH = "/api/whatsapp/webhook";
+
 const PROTECTED_PREFIXES = [
+
   "/dashboard",
   "/api/organizations",
   "/api/users",
@@ -29,9 +33,17 @@ function isProtectedPath(pathname: string) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Allow Meta WhatsApp webhook verification & events without auth.
+  // Keeps all other protected routes behind auth.
+  if (pathname === WHATSAPP_WEBHOOK_PATH) {
+    return NextResponse.next();
+  }
+
   if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
+
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const payload = token ? await verifyJwt(token, authSecret()) : null;
