@@ -273,6 +273,10 @@ export async function sendWhatsAppTextMessage(params: {
 
   const json = await response.json().catch(() => null);
   if (!response.ok) {
+    console.error(
+      "[WA_META_ERROR]",
+      JSON.stringify(json, null, 2)
+    );
     await prisma.message.update({
       where: { id: stored.id },
       data: {
@@ -431,6 +435,8 @@ async function sendWhatsAppInteractiveMessage(params: {
     metadata: params.metadata
   });
 
+  console.log("[WA_OUTBOUND_PAYLOAD]", JSON.stringify(payload, null, 2));
+
   const response = await fetch(`https://graph.facebook.com/v19.0/${integration.phoneNumberId}/messages`, {
     method: "POST",
     headers: {
@@ -442,6 +448,10 @@ async function sendWhatsAppInteractiveMessage(params: {
 
   const json = await response.json().catch(() => null);
   if (!response.ok) {
+    console.error(
+      "[WA_META_ERROR]",
+      JSON.stringify(json, null, 2)
+    );
     await prisma.message.update({
       where: { id: stored.id },
       data: {
@@ -661,23 +671,52 @@ async function handleConsultantConversation(params: {
       payload: {
         type: "interactive",
         interactive: {
-          type: "button",
+          type: "list",
           body: { text: discoveryText },
+          header: { type: "text", text: "Select Service" },
           action: {
-            buttons: [
-              { type: "reply", reply: { id: "svc_automation", title: "Improve / Automate my business" } },
-              { type: "reply", reply: { id: "svc_software_idea", title: "Build new software idea" } },
-              { type: "reply", reply: { id: "svc_ai_agent", title: "AI Agent / Chatbot" } },
-              { type: "reply", reply: { id: "svc_website_app", title: "Website / Mobile App" } },
-              { type: "reply", reply: { id: "svc_crm", title: "CRM / Business System" } },
-              { type: "reply", reply: { id: "svc_iot_holo", title: "IoT / Hologram / 3D Experience" } },
-              { type: "reply", reply: { id: "svc_team", title: "Talk with Team" } }
+            button: "Choose",
+            sections: [
+              {
+                title: "Select Service",
+                rows: [
+                  {
+                    id: "service_automation",
+                    title: "Improve / Automate my business"
+                  },
+                  {
+                    id: "service_software",
+                    title: "Build new software idea"
+                  },
+                  {
+                    id: "service_ai",
+                    title: "AI Agent / Chatbot"
+                  },
+                  {
+                    id: "service_web",
+                    title: "Website / Mobile App"
+                  },
+                  {
+                    id: "service_crm",
+                    title: "CRM / Business System"
+                  },
+                  {
+                    id: "service_iot",
+                    title: "IoT / Hologram / 3D Experience"
+                  },
+                  {
+                    id: "service_team",
+                    title: "Talk with Team"
+                  }
+                ]
+              }
             ]
           }
         }
       },
       metadata: { source: "consultant", language: nextLanguage }
     });
+
 
     return { skipped: false };
   }
@@ -687,13 +726,24 @@ async function handleConsultantConversation(params: {
     let nextService: string | null = selectedService;
 
     if (!nextService) {
-      if (normalized.includes("automate") || normalized.includes("business") || normalized.includes("grow")) nextService = "Improve / Automate my business";
-      if (normalized.includes("software") || normalized.includes("idea") || normalized.includes("build")) nextService = "Build new software idea";
-      if (normalized.includes("agent") || normalized.includes("chatbot") || normalized.includes("ai")) nextService = "AI Agent / Chatbot";
-      if (normalized.includes("website") || normalized.includes("mobile") || normalized.includes("app")) nextService = "Website / Mobile App";
-      if (normalized.includes("crm") || normalized.includes("system")) nextService = "CRM / Business System";
-      if (normalized.includes("iot") || normalized.includes("hologram") || normalized.includes("3d")) nextService = "IoT / Hologram / 3D Experience";
-      if (normalized.includes("team") || normalized.includes("talk")) nextService = "Talk with Team";
+      if (normalized.includes("service_automation")) nextService = "Improve / Automate my business";
+      if (normalized.includes("service_software")) nextService = "Build new software idea";
+      if (normalized.includes("service_ai")) nextService = "AI Agent / Chatbot";
+      if (normalized.includes("service_web")) nextService = "Website / Mobile App";
+      if (normalized.includes("service_crm")) nextService = "CRM / Business System";
+      if (normalized.includes("service_iot")) nextService = "IoT / Hologram / 3D Experience";
+      if (normalized.includes("service_team")) nextService = "Talk with Team";
+
+      // fallback keyword mapping for free-text replies
+      if (!nextService) {
+        if (normalized.includes("automate") || normalized.includes("business") || normalized.includes("grow")) nextService = "Improve / Automate my business";
+        if (normalized.includes("software") || normalized.includes("idea") || normalized.includes("build")) nextService = "Build new software idea";
+        if (normalized.includes("agent") || normalized.includes("chatbot") || normalized.includes("ai")) nextService = "AI Agent / Chatbot";
+        if (normalized.includes("website") || normalized.includes("mobile") || normalized.includes("app")) nextService = "Website / Mobile App";
+        if (normalized.includes("crm") || normalized.includes("system")) nextService = "CRM / Business System";
+        if (normalized.includes("iot") || normalized.includes("hologram") || normalized.includes("3d")) nextService = "IoT / Hologram / 3D Experience";
+        if (normalized.includes("team") || normalized.includes("talk")) nextService = "Talk with Team";
+      }
     }
 
     if (!nextService) {
@@ -704,17 +754,24 @@ async function handleConsultantConversation(params: {
         payload: {
           type: "interactive",
           interactive: {
-            type: "button",
+            type: "list",
+            header: { type: "text", text: "Select Service" },
             body: { text: nextLanguageBody(language) },
             action: {
-              buttons: [
-                { type: "reply", reply: { id: "svc_automation", title: "Improve / Automate my business" } },
-                { type: "reply", reply: { id: "svc_software_idea", title: "Build new software idea" } },
-                { type: "reply", reply: { id: "svc_ai_agent", title: "AI Agent / Chatbot" } },
-                { type: "reply", reply: { id: "svc_website_app", title: "Website / Mobile App" } },
-                { type: "reply", reply: { id: "svc_crm", title: "CRM / Business System" } },
-                { type: "reply", reply: { id: "svc_iot_holo", title: "IoT / Hologram / 3D Experience" } },
-                { type: "reply", reply: { id: "svc_team", title: "Talk with Team" } }
+              button: "Choose",
+              sections: [
+                {
+                  title: "Select Service",
+                  rows: [
+                    { id: "service_automation", title: "Improve / Automate my business" },
+                    { id: "service_software", title: "Build new software idea" },
+                    { id: "service_ai", title: "AI Agent / Chatbot" },
+                    { id: "service_web", title: "Website / Mobile App" },
+                    { id: "service_crm", title: "CRM / Business System" },
+                    { id: "service_iot", title: "IoT / Hologram / 3D Experience" },
+                    { id: "service_team", title: "Talk with Team" }
+                  ]
+                }
               ]
             }
           }
@@ -880,6 +937,25 @@ async function sendAutomaticWhatsAppReply(params: {
   return handleConsultantConversation(params);
 }
 
+function extractInboundInteractiveId(messagePayload: any): string | null {
+  const textBody = messagePayload?.text?.body;
+  if (typeof textBody === "string") return textBody;
+
+  const buttonReplyId = messagePayload?.interactive?.button_reply?.id;
+  if (typeof buttonReplyId === "string") return buttonReplyId;
+
+  const buttonReplyTitle = messagePayload?.interactive?.button_reply?.title;
+  if (typeof buttonReplyTitle === "string") return buttonReplyTitle;
+
+  const listReplyId = messagePayload?.interactive?.list_reply?.id;
+  if (typeof listReplyId === "string") return listReplyId;
+
+  const listReplyTitle = messagePayload?.interactive?.list_reply?.title;
+  if (typeof listReplyTitle === "string") return listReplyTitle;
+
+  return null;
+}
+
 export async function processIncomingWhatsAppMessage(params: {
   organizationId: string;
   from: string;
@@ -889,6 +965,7 @@ export async function processIncomingWhatsAppMessage(params: {
   phoneNumberId?: string | null;
   waId?: string | null;
 }) {
+
   const phone = normalizePhone(params.from);
   const integration = await prisma.whatsAppIntegration.findUnique({
     where: { organizationId: params.organizationId },
