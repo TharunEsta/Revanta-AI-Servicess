@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/revanta-os/db";
+import { getPrisma } from "@/lib/revanta-os/db";
 import { getSessionFromRequest } from "@/lib/revanta-os/auth";
 import { jsonError, jsonOk, safeJson } from "@/lib/revanta-os/http";
 import { runAIPrompt } from "@/lib/revanta-os/ai";
@@ -7,6 +7,7 @@ import { answerBusinessQuestion, generateInvoiceFromProject, generateProposalFro
 import { getRequestFingerprint, isRateLimited } from "@/lib/revanta-os/security";
 
 export async function POST(request: NextRequest) {
+  const prisma = getPrisma();
   const session = await getSessionFromRequest(request);
   if (!session?.orgId) return jsonError("Unauthorized", 401);
   const body = (await safeJson(request)) as Record<string, unknown>;

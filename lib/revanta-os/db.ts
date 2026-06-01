@@ -5,13 +5,23 @@ declare global {
   var __revantaPrisma: PrismaClient | undefined;
 }
 
-export const prisma =
-  globalThis.__revantaPrisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
-  });
+let prismaSingleton: PrismaClient | null = null;
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__revantaPrisma = prisma;
+export function getPrisma() {
+  if (prismaSingleton) return prismaSingleton;
+
+  // Lazily create PrismaClient to avoid build-time module initialization issues on Vercel.
+  prismaSingleton =
+    globalThis.__revantaPrisma ??
+    new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
+    });
+
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.__revantaPrisma = prismaSingleton;
+  }
+
+  return prismaSingleton;
 }
+
 
