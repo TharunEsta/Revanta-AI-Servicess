@@ -40,36 +40,72 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid payload." }, { status: 400 });
   }
+
+  console.log("[WA_WEBHOOK_RECEIVED]", {
+    entries: payload?.entry?.length
+  });
+
   const entries = payload?.entry ?? [];
+
 
   for (const entry of entries) {
     for (const change of entry.changes ?? []) {
       const value = change.value ?? {};
+
+      console.log("[WA_WEBHOOK_VALUE]", {
+        phoneNumberId: value.metadata?.phone_number_id,
+        messageCount: value.messages?.length ?? 0,
+        statusCount: value.statuses?.length ?? 0
+      });
+
       const phoneNumberId = value.metadata?.phone_number_id || null;
+
       if (!phoneNumberId) {
         continue;
       }
 
       const organizationId = await resolveOrganizationFromPhoneNumberId(phoneNumberId);
+
+      console.log("[WA_ORG_RESOLVE]", {
+        phoneNumberId,
+        organizationId
+      });
+
       if (!organizationId) {
         continue;
       }
+
 
       for (const message of value.messages ?? []) {
         const contacts = value.contacts ?? [];
         const contactName = contacts[0]?.profile?.name || null;
         const from = message.from || value.contacts?.[0]?.wa_id || "";
         if (!from) continue;
-        await processIncomingWhatsAppMessage({
-          organizationId,
+
+        console.log("[WA_PROCESS_MESSAGE]", {
           from,
-          body: message.text?.body || message.caption || "[non-text message]",
           messageId: message.id,
-          name: contactName,
-          phoneNumberId,
-          waId: value.contacts?.[0]?.wa_id || from
+          hasText: !!message.text?.body
         });
+
+        try {
+          await processIncomingWhatsAppMessage({
+            organizationId,
+            from,
+            body: message.text?.body || message.caption || "[non-text message]",
+            messageId: message.id,
+            name: contactName,
+            phoneNumberId,
+            waId: value.contacts?.[0]?.wa_id || from
+          });
+        } catch (error) {
+          console.error("[WA_PROCESS_ERROR]", error);
+        }
+
+
+      	
       }
+
 
       for (const status of value.statuses ?? []) {
         await recordWhatsAppStatusUpdate({
