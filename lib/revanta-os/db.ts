@@ -24,4 +24,20 @@ export function getPrisma() {
   return prismaSingleton;
 }
 
+// Backward compatibility: keep the existing `import { prisma } from "@/lib/revanta-os/db"` API.
+// NOTE: Do NOT call getPrisma() at module import time.
+// Export a getter-style function while preserving named export via a lazy Proxy.
+// This ensures `new PrismaClient()` is never executed during build/module evaluation.
+export const prisma = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      const client = getPrisma() as any;
+      return (client as any)[prop];
+    }
+  }
+) as any;
+
+
+
 

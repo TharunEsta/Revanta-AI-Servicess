@@ -682,27 +682,27 @@ async function handleConsultantConversation(params: {
                 rows: [
                   {
                     id: "service_automation",
-                    title: "Improve / Automate my business"
+                    title: "Improve Business"
                   },
                   {
                     id: "service_software",
-                    title: "Build new software idea"
+                    title: "Build Software"
                   },
                   {
                     id: "service_ai",
-                    title: "AI Agent / Chatbot"
+                    title: "AI Agent"
                   },
                   {
                     id: "service_web",
-                    title: "Website / Mobile App"
+                    title: "Website / App"
                   },
                   {
                     id: "service_crm",
-                    title: "CRM / Business System"
+                    title: "CRM System"
                   },
                   {
                     id: "service_iot",
-                    title: "IoT / Hologram / 3D Experience"
+                    title: "IoT / 3D Experience"
                   },
                   {
                     id: "service_team",
