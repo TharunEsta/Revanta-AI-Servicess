@@ -21,7 +21,7 @@ export default async function CompaniesPage() {
         </h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {companies.map((company) => (
+        {companies.map((company: typeof companies[number]) => (
           <Card key={company.id} className="bg-white">
             <p className="font-semibold text-slate-950">{company.name}</p>
             <p className="text-sm text-slate-600">{company.industry || "No industry"}</p>

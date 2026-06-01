@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
           subject: conversation.subject,
           channel: conversation.channel,
           status: conversation.status,
-          messages: conversation.messages.map((message) => ({
+          messages: conversation.messages.map((message: any) => ({ 
             direction: message.direction,
             body: message.body,
             status: message.status,

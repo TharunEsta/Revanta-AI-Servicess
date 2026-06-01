@@ -95,7 +95,7 @@ export async function triggerWorkflowEvent(params: {
     }
   });
 
-  const matchingWorkflows = workflows.filter((workflow) => {
+  const matchingWorkflows = workflows.filter((workflow: { definition: unknown; triggerType: string | null; id: string; ownerId: string | null; n8nWebhookUrl?: string | null; webhookUrl?: string | null }) => {
     const events = getWorkflowEvents(workflow);
     return events.size > 0 && events.has(params.eventType);
   });

@@ -10,8 +10,10 @@ function moneyNumber(value: Prisma.Decimal | number | null | undefined) {
   return Number(value);
 }
 
-function sumAmount(items: Array<{ amount?: Prisma.Decimal | number; total?: Prisma.Decimal | number }>) {
-  return items.reduce((total, item) => total + moneyNumber(item.amount ?? item.total ?? 0), 0);
+function sumAmount(
+  items: Array<{ amount?: Prisma.Decimal | number; total?: Prisma.Decimal | number }>
+) {
+  return items.reduce((acc: number, item) => acc + moneyNumber(item.amount ?? item.total ?? 0), 0);
 }
 
 function buildInvoiceNumber(index: number) {
@@ -40,9 +42,11 @@ export async function getRevenueMetrics(organizationId: string) {
     ]);
 
   const totalInvoiced = sumAmount(invoices);
-  const totalPaid = sumAmount(payments.filter((payment) => payment.status === "SUCCEEDED"));
+  const totalPaid = sumAmount(
+    payments.filter((payment: { status?: string | null }) => payment.status === "SUCCEEDED")
+  );
   const totalExpenses = sumAmount(expenses);
-  const overdueInvoices = invoices.filter((invoice) => invoice.status === "PAST_DUE").length;
+const overdueInvoices = invoices.filter((invoice: { status: string }) => invoice.status === "PAST_DUE").length;
 
   return {
     totalInvoiced,
@@ -232,7 +236,7 @@ export async function recordPayment(params: {
     metadata: { invoiceId: invoice.id, paymentId: payment.id }
   });
 
-  const paidTotal = invoice.payments.reduce((total, current) => total + moneyNumber(current.amount), 0) + params.amount;
+  const paidTotal = invoice.payments.reduce((total: number, current: { amount: Prisma.Decimal | number | null }) => total + moneyNumber(current.amount), 0) + params.amount;
   const invoiceStatus = paidTotal >= moneyNumber(invoice.total) ? "PAID" : "SENT";
 
   await prisma.invoice.update({
@@ -575,14 +579,19 @@ export async function answerBusinessQuestion(params: {
     });
     return {
       answer: leads.length
-        ? `These clients need follow-up: ${leads.map((lead) => lead.companyName || lead.fullName || lead.company?.name || lead.id).join(", ")}.`
+        ? `These clients need follow-up: ${leads
+
+        .map((lead: { companyName: string | null; fullName: string | null; company?: { name: string } | null; id: string }) =>
+          lead.companyName || lead.fullName || lead.company?.name || lead.id
+        )
+        .join(", ")}.`
         : "No active follow-up clients need attention right now.",
       metrics,
       leads
     };
   }
 
-  if (lower.includes("which projects are delayed")) {
+if (lower.includes("which projects are delayed")) {
     const projects = await prisma.project.findMany({
       where: {
         organizationId: params.organizationId,
@@ -597,7 +606,9 @@ export async function answerBusinessQuestion(params: {
     });
     return {
       answer: projects.length
-        ? `Projects to review: ${projects.map((project) => project.name).join(", ")}.`
+? `Projects to review: ${projects
+        .map((project: { name: string }) => project.name)
+        .join(", ")}.`
         : "No delayed projects are currently detected.",
       metrics,
       projects

@@ -48,7 +48,7 @@ export default async function FinancePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Invoices</p>
           <div className="mt-4 space-y-3">
-            {invoices.map((invoice) => (
+            {invoices.map((invoice: typeof invoices[number]) => (
               <div key={invoice.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{invoice.number}</p>
                 <p className="text-sm text-slate-600">{invoice.status} · {invoice.currency} {invoice.total.toString()}</p>
@@ -59,7 +59,7 @@ export default async function FinancePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Payments</p>
           <div className="mt-4 space-y-3">
-            {payments.map((payment) => (
+            {payments.map((payment: typeof payments[number]) => (
               <div key={payment.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{payment.provider}</p>
                 <p className="text-sm text-slate-600">{payment.status} · {payment.currency} {payment.amount.toString()}</p>
@@ -73,7 +73,7 @@ export default async function FinancePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Expenses</p>
           <div className="mt-4 space-y-3">
-            {expenses.map((expense) => (
+            {expenses.map((expense: typeof expenses[number]) => (
               <div key={expense.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{expense.title}</p>
                 <p className="text-sm text-slate-600">{expense.category} · {expense.currency} {expense.amount.toString()}</p>
@@ -84,7 +84,7 @@ export default async function FinancePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Subscriptions</p>
           <div className="mt-4 space-y-3">
-            {subscriptions.map((subscription) => (
+            {subscriptions.map((subscription: typeof subscriptions[number]) => (
               <div key={subscription.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{subscription.plan.name}</p>
                 <p className="text-sm text-slate-600">{subscription.status} · {subscription.billingCycle}</p>

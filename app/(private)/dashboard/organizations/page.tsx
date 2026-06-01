@@ -23,7 +23,7 @@ export default async function OrganizationsPage() {
         </h2>
       </div>
       <div className="grid gap-4">
-        {organizations.map((organization) => (
+        {organizations.map((organization: typeof organizations[number]) => (
           <Card key={organization.id} className="bg-white">
             <p className="font-semibold text-slate-950">{organization.name}</p>
             <p className="text-sm text-slate-600">{organization.slug}</p>

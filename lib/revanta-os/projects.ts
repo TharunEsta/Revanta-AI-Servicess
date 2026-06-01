@@ -301,9 +301,11 @@ function matchCatalogItem(serviceCatalogItems: Awaited<ReturnType<typeof getServ
   if (!serviceType) return null;
   const normalized = normalizeText(serviceType);
   return (
-    serviceCatalogItems.find((item) => normalizeText(item.slug) === normalized) ||
-    serviceCatalogItems.find((item) => normalizeText(item.name) === normalized) ||
-    serviceCatalogItems.find((item) => normalizeText(item.name).includes(normalized) || normalized.includes(normalizeText(item.name))) ||
+    serviceCatalogItems.find((item: any) => normalizeText(item.slug) === normalized) ||
+    serviceCatalogItems.find((item: any) => normalizeText(item.name) === normalized) ||
+    serviceCatalogItems.find((item: any) =>
+      normalizeText(item.name).includes(normalized) || normalized.includes(normalizeText(item.name))
+    ) ||
     null
   );
 }
@@ -333,6 +335,8 @@ export async function createProjectFromWonDeal(params: {
 
   await ensureServiceCatalog(params.organizationId);
   const catalog = await getServiceCatalog(params.organizationId);
+
+  // Cast to avoid implicit-any errors in nested callbacks.
   const serviceType =
     deal.serviceType ||
     deal.lead?.serviceType ||
@@ -357,7 +361,8 @@ export async function createProjectFromWonDeal(params: {
       ownerId: deal.ownerId || null,
       leadId: deal.leadId || null,
       companyId: deal.companyId || deal.lead?.companyId || null,
-      serviceCatalogItemId: catalogItem?.id || null,
+    serviceCatalogItemId: catalogItem?.id || null,
+
       name: projectName,
       serviceType,
       status: "ACTIVE",

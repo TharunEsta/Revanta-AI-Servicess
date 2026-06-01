@@ -91,7 +91,7 @@ export default async function CustomerDetailPage({
           <Card className="bg-white">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Open tasks</p>
             <div className="mt-4 space-y-3">
-              {customer.openTasks.map((task) => (
+              {customer.openTasks.map((task: typeof customer.openTasks[number]) => (
                 <div key={task.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <p className="font-medium text-slate-950">{task.title}</p>
                   <p className="text-sm text-slate-600">{task.status}</p>
@@ -103,7 +103,7 @@ export default async function CustomerDetailPage({
           <Card className="bg-white">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">WhatsApp history</p>
             <div className="mt-4 space-y-3">
-              {customer.whatsappMessages.map((message) => (
+              {customer.whatsappMessages.map((message: typeof customer.whatsappMessages[number]) => (
                 <div key={message.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <p className="font-medium text-slate-950">{message.direction} · {message.status || "unknown"}</p>
                   <p className="text-sm text-slate-600">{message.body}</p>
@@ -118,7 +118,7 @@ export default async function CustomerDetailPage({
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Interactions</p>
           <div className="mt-4 space-y-3">
-            {customer.activities.map((activity) => (
+            {customer.activities.map((activity: typeof customer.activities[number]) => (
               <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{activity.title}</p>
                 <p className="text-sm text-slate-600">{activity.type}</p>
@@ -130,7 +130,7 @@ export default async function CustomerDetailPage({
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Opportunities</p>
           <div className="mt-4 space-y-3">
-            {customer.openOpportunities.map((deal) => (
+            {customer.openOpportunities.map((deal: typeof customer.openOpportunities[number]) => (
               <div key={deal.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{deal.title}</p>
                 <p className="text-sm text-slate-600">{deal.stage} · ${Number(deal.amount || 0).toFixed(2)}</p>

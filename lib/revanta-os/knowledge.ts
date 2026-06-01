@@ -350,7 +350,9 @@ export async function ingestKnowledgeDocument(params: {
     }
   });
 
-  const chunks = splitTextIntoChunks(fullText).map((chunk, index) => ({
+  const chunks = splitTextIntoChunks(fullText).map((chunk: string, index: number) => ({
+
+    
     organizationId: params.organizationId,
     documentId: document.id,
     chunkIndex: index,
@@ -418,7 +420,7 @@ async function fetchRelevantChunks(params: {
   const queryTokens = tokenize(params.query);
 
   const ranked = chunks
-    .map((chunk) => {
+    .map((chunk: { embedding: Prisma.JsonValue | null; content: string }) => {
       const embedding = getEmbeddingFromJson(chunk.embedding) || buildEmbeddingVector(chunk.content);
       const similarity = cosineSimilarity(queryEmbedding, embedding);
       const chunkTokens = tokenize(chunk.content);
@@ -431,7 +433,7 @@ async function fetchRelevantChunks(params: {
         tokenHits
       };
     })
-    .sort((left, right) => right.score - left.score)
+    .sort((left: { score: number }, right: { score: number }) => right.score - left.score)
     .slice(0, params.topK);
 
   return ranked;
@@ -458,16 +460,32 @@ export async function retrieveKnowledgeContext(params: {
   documentId?: string | null;
 }) {
   const matches = await searchKnowledgeChunks(params);
-  return matches.map((match) => ({
-    documentId: match.chunk.documentId,
-    documentTitle: match.chunk.document.title,
-    knowledgeBase: match.chunk.document.knowledgeBase?.name || null,
-    content: match.chunk.content,
-    score: match.score,
-    sourceType: match.chunk.document.sourceType,
-    sourceUrl: match.chunk.document.sourceUrl,
-    chunkIndex: match.chunk.chunkIndex
-  }));
+
+  return matches.map(
+    (match: {
+      chunk: {
+        documentId: string;
+        document: {
+          title: string;
+          knowledgeBase?: { name?: string | null } | null;
+          sourceType?: string | null;
+          sourceUrl?: string | null;
+        };
+        content: string;
+        score: number;
+        chunkIndex: number;
+      };
+    }) => ({
+      documentId: match.chunk.documentId,
+      documentTitle: match.chunk.document.title,
+      knowledgeBase: match.chunk.document.knowledgeBase?.name || null,
+      content: match.chunk.content,
+      score: match.chunk.score as unknown as number,
+      sourceType: match.chunk.document.sourceType,
+      sourceUrl: match.chunk.document.sourceUrl,
+      chunkIndex: match.chunk.chunkIndex
+    })
+  );
 }
 
 export async function getCompanyKnowledgeContext(organizationId: string, query?: string) {
@@ -516,7 +534,7 @@ export async function getCompanyKnowledgeContext(organizationId: string, query?:
   for (const knowledgeBase of knowledgeBases) {
     const documentLines = knowledgeBase.documents
       .slice(0, 6)
-      .map((document) => {
+      .map((document: { sourceName: string | null; sourceType: string | null; title: string; sourceUrl: string | null }) => {
         const sourceLabel = document.sourceName || document.sourceType || "Document";
         return `- ${document.title} (${sourceLabel})${document.sourceUrl ? ` — ${document.sourceUrl}` : ""}`;
       })
@@ -529,7 +547,7 @@ export async function getCompanyKnowledgeContext(organizationId: string, query?:
   if (documentMatches.length) {
     sections.push(
       `Relevant document chunks\n${documentMatches
-        .map((match) => `- ${match.documentTitle} [chunk ${match.chunkIndex}]: ${match.content}`)
+        .map((match: { documentTitle: string; chunkIndex: number; content: string }) => `- ${match.documentTitle} [chunk ${match.chunkIndex}]: ${match.content}`)
         .join("\n")}`
     );
   }

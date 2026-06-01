@@ -30,7 +30,7 @@ export default async function ConversationsPage() {
       </div>
 
       <div className="grid gap-4">
-        {conversations.map((conversation) => (
+        {conversations.map((conversation: typeof conversations[number]) => (
           <Card key={conversation.id} className="bg-white">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
@@ -47,7 +47,7 @@ export default async function ConversationsPage() {
               <ConversationStateToggle conversationId={conversation.id} aiState={conversation.aiState as "AI_ACTIVE" | "HUMAN_ACTIVE"} />
             </div>
             <div className="mt-4 space-y-2">
-              {conversation.messages.map((message) => (
+              {conversation.messages.map((message: typeof conversation.messages[number]) => (
                 <div key={message.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   {message.direction} · {message.body}
                 </div>

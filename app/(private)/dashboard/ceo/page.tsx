@@ -51,7 +51,7 @@ export default async function CeoDashboardPage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Projects</p>
           <div className="mt-4 space-y-3">
-            {projects.map((project: { id: string; name: string; company?: { name?: string | null }; lead?: { companyName?: string | null }; deliveryStage?: string | null }) => (
+        {projects.map((project: typeof projects[number]) => (
 
               <div key={project.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{project.name}</p>
@@ -63,7 +63,7 @@ export default async function CeoDashboardPage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Support</p>
           <div className="mt-4 space-y-3">
-            {tickets.map((ticket) => (
+            {tickets.map((ticket: typeof tickets[number]) => (
               <div key={ticket.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{ticket.subject}</p>
                 <p className="text-sm text-slate-600">{ticket.status} · {ticket.priority}</p>
@@ -74,7 +74,7 @@ export default async function CeoDashboardPage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Proposals</p>
           <div className="mt-4 space-y-3">
-            {proposals.map((proposal) => (
+            {proposals.map((proposal: typeof proposals[number]) => (
               <div key={proposal.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{proposal.title}</p>
                 <p className="text-sm text-slate-600">{proposal.status} · {proposal.approvalStatus || "PENDING"}</p>

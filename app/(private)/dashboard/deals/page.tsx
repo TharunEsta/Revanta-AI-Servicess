@@ -21,7 +21,7 @@ export default async function DealsPage() {
         </h2>
       </div>
       <div className="grid gap-4">
-        {deals.map((deal) => (
+        {deals.map((deal: typeof deals[number]) => (
           <Card key={deal.id} className="bg-white">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>

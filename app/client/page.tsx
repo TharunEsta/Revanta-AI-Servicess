@@ -38,7 +38,7 @@ export default async function ClientPortalPage() {
       </div>
 
       <div className="grid gap-4">
-        {projects.map((project) => (
+        {projects.map((project: any) => ( 
           <Card key={project.id} className="bg-white">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>

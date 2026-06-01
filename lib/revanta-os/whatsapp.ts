@@ -612,7 +612,7 @@ async function handleConsultantConversation(params: {
   const recentMessages = conversation.messages
     .slice()
     .reverse()
-    .map((m) => ({ direction: m.direction, body: m.body, createdAt: m.createdAt.toISOString() }));
+    .map((m: any) => ({ direction: m.direction, body: m.body, createdAt: m.createdAt.toISOString() }))
 
   if (flowStep === "NEW") {
     const hour = now.getHours();

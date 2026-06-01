@@ -21,7 +21,7 @@ export default async function ContactsPage() {
         </h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {contacts.map((contact) => (
+        {contacts.map((contact: typeof contacts[number]) => (
           <Card key={contact.id} className="bg-white">
             <p className="font-semibold text-slate-950">{contact.fullName || [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "Untitled contact"}</p>
             <p className="text-sm text-slate-600">{contact.email || contact.phone || "No contact"}</p>

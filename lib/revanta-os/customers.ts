@@ -70,7 +70,7 @@ function buildTimelineItems(params: {
     }))
   ];
 
-  return timeline.sort((left, right) => right.date.getTime() - left.date.getTime());
+  return timeline.sort((left: { date: Date }, right: { date: Date }) => right.date.getTime() - left.date.getTime());
 }
 
 export async function getCustomer360Profile(organizationId: string, customerId: string) {
@@ -87,10 +87,10 @@ export async function getCustomer360Profile(organizationId: string, customerId: 
           include: { messages: { orderBy: { createdAt: "desc" }, take: 20 }, assignedTo: true },
           orderBy: { updatedAt: "desc" }
         },
-        messages: {
-          include: { conversation: true },
-          orderBy: { createdAt: "desc" }
-        },
+messages: {
+            include: { conversation: true },
+            orderBy: { createdAt: "desc" }
+          },
         tasks: true,
         activities: {
           orderBy: { createdAt: "desc" },
@@ -188,13 +188,13 @@ export async function getCustomer360Profile(organizationId: string, customerId: 
         orderBy: { updatedAt: "desc" }
       });
 
-  const messages = resolvedLead
+const messages = resolvedLead
     ? resolvedLead.messages
     : conversations.length
       ? await prisma.message.findMany({
           where: {
             organizationId,
-            conversationId: { in: conversations.map((conversationRecord) => conversationRecord.id) }
+conversationId: { in: conversations.map((conversationRecord: { id: string }) => conversationRecord.id) }
           },
           include: { conversation: true },
           orderBy: { createdAt: "desc" }
@@ -253,14 +253,14 @@ export async function getCustomer360Profile(organizationId: string, customerId: 
       });
 
   const wonRevenue = deals
-    .filter((deal) => deal.stage === "WON")
-    .reduce((sum, deal) => sum + toNumber(deal.amount), 0);
+    .filter((deal: { stage: string }) => deal.stage === "WON")
+    .reduce((sum: number, deal: { amount: unknown }) => sum + toNumber(deal.amount), 0);
 
-  const openOpportunities = deals.filter((deal) => !["WON", "LOST", "ARCHIVED"].includes(deal.stage));
+const openOpportunities = deals.filter((deal: { stage: string }) => !["WON", "LOST", "ARCHIVED"].includes(deal.stage));
 
-  const openTasks = tasks.filter((task) => !["COMPLETED", "CANCELED"].includes(task.status));
+const openTasks = tasks.filter((task: { status: string }) => !["COMPLETED", "CANCELED"].includes(task.status));
 
-  const whatsappMessages = messages.filter((message) => message.conversation.channel === "WHATSAPP");
+const whatsappMessages = messages.filter((message: { conversation: { channel: string } }) => message.conversation.channel === "WHATSAPP");
 
   const aiSummary = resolvedLead?.aiSummary || resolvedLead?.qualificationNotes || null;
   const timeline = buildTimelineItems({

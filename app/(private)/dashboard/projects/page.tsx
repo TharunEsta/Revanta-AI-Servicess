@@ -36,11 +36,15 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="grid gap-4">
-        {summary.projects.map((project) => {
+        {summary.projects.map((project: { id: string; milestones: any[]; tasks: Array<{ status: string }>; serviceType: string | null; serviceCatalogItem: { name: string | null } | null; name: string; status: string; deliveryStage: string; environmentStatus: string | null; company: { name: string | null } | null; lead: { companyName: string | null; fullName: string | null } | null; repositoryUrl: string | null }) => {
+
           const nextMilestone = project.milestones[0];
-          const openTasks = project.tasks.filter((task) => !["COMPLETED", "CANCELED"].includes(task.status));
+          const openTasks = project.tasks.filter((task: { status: string }) => !["COMPLETED", "CANCELED"].includes(task.status));
+
+
           return (
             <Card key={project.id} className="bg-white">
+
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-slate-500">

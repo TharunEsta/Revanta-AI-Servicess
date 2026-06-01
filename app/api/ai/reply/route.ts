@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
           messages: conversation.messages
             .slice()
             .reverse()
-            .map((message) => ({
+            .map((message: any) => ({ 
               direction: message.direction,
               body: message.body,
               status: message.status,

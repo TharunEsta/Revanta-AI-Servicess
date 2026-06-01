@@ -20,7 +20,8 @@ export default async function UsersPage() {
         </h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {users.map((user) => (
+        {users.map((user: any) => (
+
           <Card key={user.id} className="bg-white">
             <p className="font-semibold text-slate-950">{user.name || user.email}</p>
             <p className="text-sm text-slate-600">{user.email}</p>

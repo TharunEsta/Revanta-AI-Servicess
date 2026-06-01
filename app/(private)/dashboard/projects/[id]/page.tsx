@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/revanta-os/db";
+ import { prisma } from "@/lib/revanta-os/db";
 import { getSessionUser } from "@/lib/revanta-os/auth";
 import { Card } from "@/components/ui";
 import { ProjectDeliveryManager } from "@/components/project-delivery-manager";
@@ -31,8 +31,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) return null;
 
   const latestConversation = project.conversations[0];
-  const activeTasks = project.tasks.filter((task) => !["COMPLETED", "CANCELED"].includes(task.status));
-  const openMilestones = project.milestones.filter((milestone) => !["APPROVED", "DONE"].includes(milestone.status));
+const activeTasks = project.tasks.filter((task: { status: string }) => !["COMPLETED", "CANCELED"].includes(task.status));
+  const openMilestones = project.milestones.filter((milestone: { status: string }) => !["APPROVED", "DONE"].includes(milestone.status));
+
+
 
   return (
     <div className="space-y-6">
@@ -93,7 +95,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Milestones</p>
           <div className="mt-4 space-y-3">
-            {project.milestones.map((milestone) => (
+            {project.milestones.map((milestone: { id: string; title: string; status: string; dueAt: Date | null }) => (
               <div key={milestone.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{milestone.title}</p>
                 <p className="text-sm text-slate-600">{milestone.status} · {milestone.dueAt ? new Date(milestone.dueAt).toLocaleDateString() : "No due date"}</p>
@@ -105,7 +107,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Tasks</p>
           <div className="mt-4 space-y-3">
-            {project.tasks.map((task) => (
+            {project.tasks.map((task: { id: string; title: string; status: string; assignee: { name: string | null } | null }) => (
               <div key={task.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{task.title}</p>
                 <p className="text-sm text-slate-600">{task.status} · {task.assignee?.name || "Unassigned"}</p>
@@ -120,7 +122,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Client thread</p>
           <div className="mt-4 space-y-3">
             {latestConversation?.messages?.length ? (
-              latestConversation.messages.map((message) => (
+              latestConversation.messages.map((message: { id: string; direction: string; body: string }) => (
                 <div key={message.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   {message.direction} · {message.body}
                 </div>
@@ -149,7 +151,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <Card className="bg-white">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Activity timeline</p>
         <div className="mt-4 space-y-3">
-          {project.activities.map((activity) => (
+          {project.activities.map((activity: { id: string; title: string; type: string }) => (
             <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
               <p className="font-medium text-slate-950">{activity.title}</p>
               <p className="text-sm text-slate-600">{activity.type}</p>

@@ -56,8 +56,10 @@ export default async function WhatsAppPage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Templates</p>
           <div className="mt-4 space-y-3">
-            {templates.map((template) => (
+            {templates.map((template: { id: string; name: string; language: string; status: string; category: string | null; } ) => (
+
               <div key={template.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+
                 <p className="font-medium text-slate-950">{template.name}</p>
                 <p className="text-sm text-slate-600">
                   {template.language} · {template.status}
@@ -72,7 +74,9 @@ export default async function WhatsAppPage() {
       <Card className="bg-white">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Recent WhatsApp messages</p>
         <div className="mt-4 space-y-3">
-          {metrics.recentMessages.map((message) => (
+            {metrics.recentMessages.map((message: any) => (
+
+
             <div key={message.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
               <p className="font-medium text-slate-950">
                 {message.conversation.subject || message.conversation.lead?.companyName || message.conversation.lead?.fullName || "Conversation"}

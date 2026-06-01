@@ -54,7 +54,7 @@ export default async function DashboardHomePage() {
       <Card className="bg-white">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Recent projects</p>
         <div className="mt-4 space-y-3">
-          {summary.recentProjects.map((project) => (
+          {summary.recentProjects.map((project: typeof summary.recentProjects[number]) => (
             <div key={project.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
               <p className="font-medium text-slate-950">{project.name}</p>
               <p className="text-sm text-slate-600">
@@ -72,7 +72,7 @@ export default async function DashboardHomePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Latest leads</p>
           <div className="mt-4 space-y-3">
-            {summary.latestLeads.map((lead) => (
+            {summary.latestLeads.map((lead: typeof summary.latestLeads[number]) => (
               <div key={lead.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{lead.companyName || lead.fullName || "Untitled lead"}</p>
                 <p className="text-sm text-slate-600">{lead.status} · {lead.source}</p>
@@ -87,7 +87,7 @@ export default async function DashboardHomePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Recent activity</p>
           <div className="mt-4 space-y-3">
-            {summary.recentActivities.map((activity) => (
+            {summary.recentActivities.map((activity: typeof summary.recentActivities[number]) => (
               <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{activity.title}</p>
                 <p className="text-sm text-slate-600">{activity.type}</p>
@@ -101,7 +101,7 @@ export default async function DashboardHomePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Latest conversations</p>
           <div className="mt-4 space-y-3">
-            {summary.latestConversations.map((conversation) => (
+            {summary.latestConversations.map((conversation: typeof summary.latestConversations[number]) => (
               <div key={conversation.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{conversation.subject || conversation.lead?.companyName || conversation.lead?.fullName || "Conversation"}</p>
                 <p className="text-sm text-slate-600">
@@ -116,7 +116,7 @@ export default async function DashboardHomePage() {
         <Card className="bg-white">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Recent workflow runs</p>
           <div className="mt-4 space-y-3">
-            {summary.recentWorkflowRuns.map((run) => (
+            {summary.recentWorkflowRuns.map((run: typeof summary.recentWorkflowRuns[number]) => (
               <div key={run.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{run.workflow.name}</p>
                 <p className="text-sm text-slate-600">{run.status} · {run.trigger || "manual"}</p>
