@@ -6,6 +6,8 @@ import { runAIPrompt } from "@/lib/revanta-os/ai";
 import { triggerWorkflowEvent } from "@/lib/revanta-os/workflows";
 import { toJsonObject, toJsonValue } from "@/lib/revanta-os/json";
 import { getRequestFingerprint, isRateLimited } from "@/lib/revanta-os/security";
+import { buildCalendlyQualifiedMessage, getCalendlyBookingUrl } from "@/lib/revanta-os/calendly";
+import { sendWhatsAppTextMessage } from "@/lib/revanta-os/whatsapp";
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromRequest(request);
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest) {
           nextBestAction: typeof parsedQualification.nextBestAction === "string" ? parsedQualification.nextBestAction : undefined,
           aiQualifiedAt: new Date(),
           status: score >= 70 && lead.status === "NEW" ? "QUALIFIED" : undefined,
+          calendlyBookingUrl: getCalendlyBookingUrl() || undefined,
           enrichment: toJsonValue({
             ...toJsonObject(lead.enrichment),
             aiQualification: parsedQualification,
@@ -95,6 +98,47 @@ export async function POST(request: NextRequest) {
           score: updatedLead.score
         }
       });
+
+      if (updatedLead.status === "QUALIFIED") {
+        const bookingUrl = getCalendlyBookingUrl();
+        if (bookingUrl) {
+          const conversation = await prisma.conversation.findFirst({
+            where: {
+              organizationId: session.orgId,
+              leadId: updatedLead.id,
+              channel: "WHATSAPP"
+            },
+            include: { lead: true, contact: true },
+            orderBy: { updatedAt: "desc" }
+          });
+
+          if (conversation) {
+            const bookingMessage = buildCalendlyQualifiedMessage(bookingUrl);
+            if (bookingMessage) {
+              await prisma.conversation.update({
+                where: { id: conversation.id },
+                data: {
+                  metadata: toJsonValue({
+                    ...(conversation.metadata && typeof conversation.metadata === "object" && !Array.isArray(conversation.metadata)
+                      ? (conversation.metadata as Record<string, unknown>)
+                      : {}),
+                    flowStep: "BOOK_DISCOVERY_CALL",
+                    lastBotInteraction: new Date().toISOString(),
+                    calendlyBookingUrl: bookingUrl
+                  })
+                }
+              });
+
+              await sendWhatsAppTextMessage({
+                organizationId: session.orgId,
+                conversationId: conversation.id,
+                text: bookingMessage,
+                metadata: { source: "consultant", autoReply: true, calendlyBookingUrl: bookingUrl }
+              });
+            }
+          }
+        }
+      }
     }
 
     return jsonOk(result);

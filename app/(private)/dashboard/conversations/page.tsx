@@ -38,11 +38,26 @@ export default async function ConversationsPage() {
                   {conversation.subject || conversation.lead?.companyName || conversation.lead?.fullName || "Conversation"}
                 </p>
                 <p className="text-sm text-slate-600">
-                  {conversation.channel} · {conversation.status}
-                  {conversation.assignedTo?.name ? ` · ${conversation.assignedTo.name}` : ""}
-                  {conversation.threadId ? ` · ${conversation.threadId}` : ""}
-                  {conversation.aiState ? ` · ${conversation.aiState}` : ""}
+                  {conversation.channel} Â· {conversation.status}
+                  {conversation.assignedTo?.name ? ` Â· ${conversation.assignedTo.name}` : ""}
+                  {conversation.threadId ? ` Â· ${conversation.threadId}` : ""}
+                  {conversation.aiState ? ` Â· ${conversation.aiState}` : ""}
                 </p>
+                {conversation.lead?.meetingScheduled ? (
+                  <p className="mt-2 text-xs text-sky-700">
+                    Meeting booked on{" "}
+                    {conversation.lead.meetingBookedAt
+                      ? new Intl.DateTimeFormat("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }).format(new Date(conversation.lead.meetingBookedAt))
+                      : "not set"}
+                    {conversation.lead.calendlyEventId ? ` · Event ${conversation.lead.calendlyEventId}` : ""}
+                  </p>
+                ) : null}
               </div>
               <ConversationStateToggle conversationId={conversation.id} aiState={conversation.aiState as "AI_ACTIVE" | "HUMAN_ACTIVE"} />
             </div>
@@ -70,9 +85,9 @@ export default async function ConversationsPage() {
 
                 const statusIcon = (m: typeof conversation.messages[number]) => {
                   if (m.direction !== "OUTBOUND") return null;
-                  if (m.readAt) return "✓✓";
-                  if (m.deliveredAt) return "✓✓";
-                  if (m.sentAt) return "✓";
+                  if (m.readAt) return "âœ“âœ“";
+                  if (m.deliveredAt) return "âœ“âœ“";
+                  if (m.sentAt) return "âœ“";
                   return "";
                 };
 
@@ -118,7 +133,6 @@ export default async function ConversationsPage() {
                 });
               })()}
             </div>
-
           </Card>
         ))}
       </div>

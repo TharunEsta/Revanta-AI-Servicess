@@ -43,6 +43,7 @@ enum LeadSource {
 enum LeadStatus {
   NEW
   QUALIFIED
+  MEETING_BOOKED
   CONTACTED
   ENGAGED
   PROPOSAL
@@ -518,6 +519,10 @@ model Lead {
   recommendedService String?
   qualificationNotes String?
   nextBestAction String?
+  meetingScheduled Boolean @default(false)
+  meetingBookedAt DateTime?
+  calendlyEventId String?
+  calendlyBookingUrl String?
   aiSummary      Json?
   enrichment     Json?
   aiQualifiedAt  DateTime?
@@ -1500,4 +1505,30 @@ model AuditLog {
 
   @@index([organizationId, createdAt])
   @@index([organizationId, action])
+}
+
+model ConversationReminder {
+  id             String    @id @default(cuid())
+  organizationId String
+  conversationId String
+  leadId         String?
+
+  reminderType   String
+
+  scheduledFor   DateTime
+  sentAt         DateTime?
+  cancelledAt    DateTime?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  lead           Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, scheduledFor])
+  @@index([conversationId, scheduledFor])
+
+  // Prevent duplicate pending reminders per conversation + type
+  @@unique([conversationId, reminderType], map: "ConversationReminder_pending_unique_idx")
 }

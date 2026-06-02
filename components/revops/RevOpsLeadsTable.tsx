@@ -76,7 +76,7 @@ type Props = {
   initialOwners: LeadOwner[];
 };
 
-const leadStatuses = ["NEW", "QUALIFIED", "CONTACTED", "ENGAGED", "PROPOSAL", "WON", "LOST", "ARCHIVED"];
+const leadStatuses = ["NEW", "QUALIFIED", "MEETING_BOOKED", "CONTACTED", "ENGAGED", "PROPOSAL", "WON", "LOST", "ARCHIVED"];
 const leadSources = [
   "MANUAL",
   "WEB",

@@ -4,6 +4,11 @@ import { qualifyLeadWithBrain } from "@/lib/revanta-os/ai";
 import { createNotification } from "@/lib/revanta-os/notifications";
 import { runAIPrompt } from "@/lib/revanta-os/ai";
 import { triggerWorkflowEvent } from "@/lib/revanta-os/workflows";
+import {
+  buildCalendlyDiscoveryCallMessage,
+  getCalendlyBookingUrl,
+  hasCalendlyMeetingIntent
+} from "@/lib/revanta-os/calendly";
 
 export function normalizePhone(input: string) {
   return input.replace(/[^\d+]/g, "");
@@ -213,9 +218,104 @@ async function setConversationMetadata(params: {
   });
 }
 
-export async function sendWhatsAppTextMessage(params: {
+const REMINDER_DELAY_MINUTES = 5;
 
+async function scheduleConversationReminder(params: {
   organizationId: string;
+  conversationId: string;
+  leadId?: string | null;
+  reminderType: string;
+  scheduledFor: Date;
+  actorId?: string | null;
+}) {
+  const pendingReminder = await prisma.conversationReminder.findFirst({
+    where: {
+      organizationId: params.organizationId,
+      conversationId: params.conversationId,
+      reminderType: params.reminderType,
+      sentAt: null,
+      cancelledAt: null
+    }
+  });
+
+  const reminder = pendingReminder
+    ? await prisma.conversationReminder.update({
+        where: { id: pendingReminder.id },
+        data: {
+          leadId: params.leadId || pendingReminder.leadId || null,
+          scheduledFor: params.scheduledFor,
+          sentAt: null,
+          cancelledAt: null
+        }
+      })
+    : await prisma.conversationReminder.create({
+        data: {
+          organizationId: params.organizationId,
+          conversationId: params.conversationId,
+          leadId: params.leadId || null,
+          reminderType: params.reminderType,
+          scheduledFor: params.scheduledFor
+        }
+      });
+
+  await prisma.executionLog.create({
+    data: {
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_REMINDER_SCHEDULED",
+      level: "INFO",
+      message: `[REMINDER_SCHEDULED] reminderId=${reminder.id} conversationId=${params.conversationId} reminderType=${params.reminderType}`,
+      payload: toJsonValue({
+        reminderId: reminder.id,
+        conversationId: params.conversationId,
+        reminderType: params.reminderType,
+        scheduledFor: params.scheduledFor.toISOString()
+      })
+    }
+  });
+
+  return reminder;
+}
+
+async function cancelPendingConversationReminders(params: {
+  organizationId: string;
+  conversationId: string;
+  actorId?: string | null;
+}) {
+  const result = await prisma.conversationReminder.updateMany({
+    where: {
+      organizationId: params.organizationId,
+      conversationId: params.conversationId,
+      sentAt: null,
+      cancelledAt: null
+    },
+    data: {
+      cancelledAt: new Date()
+    }
+  });
+
+  if (result.count > 0) {
+    await prisma.executionLog.create({
+      data: {
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_REMINDER_CANCELLED",
+        level: "INFO",
+        message: `[REMINDER_CANCELLED] conversationId=${params.conversationId} count=${result.count}`,
+        payload: toJsonValue({
+          conversationId: params.conversationId,
+          cancelledCount: result.count
+        })
+      }
+    });
+  }
+
+  return result.count;
+}
+
+export async function sendWhatsAppTextMessage(params: {
+  organizationId: string;
+
   conversationId: string;
   text: string;
   metadata?: Record<string, unknown> | null;
@@ -543,12 +643,12 @@ async function handleConsultantConversation(params: {
       lead: { include: { company: true, contact: true } },
       company: true,
       contact: true,
-      messages: { orderBy: { createdAt: "desc" }, take: 12 }
+      messages: { orderBy: { createdAt: 'desc' }, take: 12 }
     }
   });
 
   if (!conversation) {
-    return { skipped: true, reason: "Conversation not found" };
+    return { skipped: true, reason: 'Conversation not found' };
   }
 
   const integration = await prisma.whatsAppIntegration.findUnique({
@@ -556,288 +656,255 @@ async function handleConsultantConversation(params: {
   });
 
   if (!getAutoReplyEnabled(integration?.settings)) {
-    return { skipped: true, reason: "Auto reply disabled" };
+    return { skipped: true, reason: 'Auto reply disabled' };
   }
 
-  if (conversation.aiState === "HUMAN_ACTIVE" || conversation.humanTakeoverAt) {
-    return { skipped: true, reason: "Human takeover active" };
+  if (conversation.aiState === 'HUMAN_ACTIVE' || conversation.humanTakeoverAt) {
+    return { skipped: true, reason: 'Human takeover active' };
   }
 
   const lead = conversation.lead;
   const meta = (conversation.metadata || {}) as Record<string, unknown>;
-
-  const language = (typeof meta.language === "string" ? meta.language : "ENGLISH") as "ENGLISH" | "TELUGU";
-  const flowStep = typeof meta.flowStep === "string" ? String(meta.flowStep) : "NEW";
-  const selectedService = typeof meta.selectedService === "string" ? meta.selectedService : null;
-
+  const language = (typeof meta.language === 'string' ? meta.language : 'ENGLISH') as 'ENGLISH' | 'TELUGU';
+  let flowStep = typeof meta.flowStep === 'string' ? String(meta.flowStep) : 'NEW';
+  const selectedService = typeof meta.selectedService === 'string' ? meta.selectedService : null;
   const now = new Date();
   const customerName =
-    lead?.fullName || conversation.contact?.fullName || conversation.company?.name || lead?.companyName || "there";
-
+    lead?.fullName || conversation.contact?.fullName || conversation.company?.name || lead?.companyName || 'there';
   const normalized = params.inboundBody.toLowerCase();
+  const calendlyBookingUrl = getCalendlyBookingUrl();
+  const meetingIntent = hasCalendlyMeetingIntent(params.inboundBody);
 
   const wantsHuman =
-    normalized.includes("price") ||
-    normalized.includes("pricing") ||
-    normalized.includes("cost") ||
-    normalized.includes("quote") ||
-    normalized.includes("meeting") ||
-    normalized.includes("call") ||
-    normalized.includes("talk") ||
-    normalized.includes("team") ||
-    normalized.includes("founder") ||
-    normalized.includes("person") ||
-    normalized.includes("representative") ||
-    normalized.includes("complex") ||
-    normalized.includes("custom");
+    normalized.includes('price') ||
+    normalized.includes('pricing') ||
+    normalized.includes('cost') ||
+    normalized.includes('quote') ||
+    normalized.includes('meeting') ||
+    normalized.includes('call') ||
+    normalized.includes('talk') ||
+    normalized.includes('team') ||
+    normalized.includes('founder') ||
+    normalized.includes('person') ||
+    normalized.includes('representative') ||
+    normalized.includes('complex') ||
+    normalized.includes('custom');
 
-  if (wantsHuman) {
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        aiState: "HUMAN_ACTIVE",
-        humanTakeoverAt: now,
-        metadata: toJsonValue({
-          ...(conversation.metadata ? toJsonObject(conversation.metadata) : {}),
-          flowStep: "HUMAN",
-          lastBotInteraction: now.toISOString(),
-          handoffReason: "pricing_or_meeting_or_complex"
-        })
-      }
-    });
-
-    return { skipped: true, reason: "Human takeover requested" };
-  }
-
-  const recentMessages = conversation.messages
-    .slice()
-    .reverse()
-    .map((m: any) => ({ direction: m.direction, body: m.body, createdAt: m.createdAt.toISOString() }))
-
-  if (flowStep === "NEW") {
-    const hour = now.getHours();
-    const greeting = hour < 12 ? "Good Morning" : hour < 16 ? "Good Afternoon" : "Good Evening";
-
+  if (meetingIntent && calendlyBookingUrl) {
     await setConversationMetadata({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { language: "ENGLISH", flowStep: "LANGUAGE_SELECTION", lastBotInteraction: now.toISOString() }
+      patch: {
+        flowStep: 'BOOK_DISCOVERY_CALL',
+        lastBotInteraction: now.toISOString(),
+        calendlyBookingUrl
+      }
     });
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      text: `${greeting} ${customerName}\n\nWelcome to Revanta AI.\n\nPlease choose your preferred language.`,
-      metadata: { source: "consultant", autoReply: true }
-    });
-
-    await sendWhatsAppInteractiveMessage({
-      organizationId: params.organizationId,
-      conversationId: conversation.id,
-      payload: {
-        type: "interactive",
-        interactive: {
-          type: "button",
-          body: { text: "Select language" },
-          action: {
-            buttons: [
-              { type: "reply", reply: { id: "lang_en", title: "English" } },
-              { type: "reply", reply: { id: "lang_te", title: "తెలుగు" } }
-            ]
-          }
-        }
-      },
-      metadata: { source: "consultant", language: "ENGLISH" }
+      text: buildCalendlyDiscoveryCallMessage(calendlyBookingUrl)!,
+      metadata: { source: 'consultant', autoReply: true, language, calendlyBookingUrl }
     });
 
     return { skipped: false };
   }
 
-  if (flowStep === "LANGUAGE_SELECTION") {
-    const nextLanguage = normalized.includes("telugu") || normalized.includes("తెలుగు") ? "TELUGU" : "ENGLISH";
+  if (wantsHuman) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        aiState: 'HUMAN_ACTIVE',
+        humanTakeoverAt: now,
+        metadata: toJsonValue({
+          ...(conversation.metadata ? toJsonObject(conversation.metadata) : {}),
+          flowStep: 'HUMAN',
+          lastBotInteraction: now.toISOString(),
+          handoffReason: 'pricing_or_meeting_or_complex'
+        })
+      }
+    });
+
+    return { skipped: true, reason: 'Human takeover requested' };
+  }
+
+  const recentMessages = conversation.messages
+    .slice()
+    .reverse()
+    .map((message: any) => ({ direction: message.direction, body: message.body, createdAt: message.createdAt.toISOString() }));
+
+  if (meta.flowStep === 'LANGUAGE_SELECTION') {
+    flowStep = 'DISCOVERY';
+    await setConversationMetadata({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      patch: { language: 'ENGLISH', flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+    });
+  }
+
+  if (flowStep === 'NEW') {
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good Morning' : hour < 16 ? 'Good Afternoon' : 'Good Evening';
 
     await setConversationMetadata({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { language: nextLanguage, flowStep: "DISCOVERY", lastBotInteraction: now.toISOString() }
+      patch: { language: 'ENGLISH', flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
     });
 
-    const discoveryText =
-      nextLanguage === "TELUGU" ? "మీకు Revanta AI ఎలా సహాయం చేయగలదు?" : "How can Revanta AI help you?";
-
-    await sendWhatsAppInteractiveMessage({
+    await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      payload: {
-        type: "interactive",
-        interactive: {
-          type: "list",
-          body: { text: discoveryText },
-          header: { type: "text", text: "Select Service" },
-          action: {
-            button: "Choose",
-            sections: [
-              {
-                title: "Select Service",
-                rows: [
-                  {
-                    id: "service_automation",
-                    title: "Improve Business"
-                  },
-                  {
-                    id: "service_software",
-                    title: "Build Software"
-                  },
-                  {
-                    id: "service_ai",
-                    title: "AI Agent"
-                  },
-                  {
-                    id: "service_web",
-                    title: "Website / App"
-                  },
-                  {
-                    id: "service_crm",
-                    title: "CRM System"
-                  },
-                  {
-                    id: "service_iot",
-                    title: "IoT / 3D Experience"
-                  },
-                  {
-                    id: "service_team",
-                    title: "Talk with Team"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      },
-      metadata: { source: "consultant", language: nextLanguage }
+      text: greeting + ' ' + customerName + '\n\nWelcome to Revanta AI.\n\nHow can Revanta AI help you?',
+      metadata: { source: 'consultant', autoReply: true, language: 'ENGLISH' }
     });
 
+    await scheduleConversationReminder({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      leadId: conversation.leadId,
+      reminderType: 'DISCOVERY',
+      scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+      actorId: params.actorId
+    });
 
     return { skipped: false };
   }
 
-  if (flowStep === "DISCOVERY") {
-    // Map interactive selection (Meta IDs/titles) into canonical service.
+  if (flowStep === 'DISCOVERY') {
     let nextService: string | null = selectedService;
 
     if (!nextService) {
-      // Meta IDs (from list_reply.id / button_reply.id)
-      if (normalized.includes("service_business")) nextService = "Improve / Automate my business";
-      if (normalized.includes("service_ai")) nextService = "AI Agent / Chatbot";
-      if (normalized.includes("service_software")) nextService = "Build new software idea";
+      if (normalized.includes('service_business')) nextService = 'Improve / Automate my business';
+      if (normalized.includes('service_ai')) nextService = 'AI Agent / Chatbot';
+      if (normalized.includes('service_software')) nextService = 'Build new software idea';
+      if (normalized.includes('service_automation')) nextService = 'Improve / Automate my business';
+      if (normalized.includes('service_web')) nextService = 'Website / Mobile App';
+      if (normalized.includes('service_crm')) nextService = 'CRM / Business System';
+      if (normalized.includes('service_iot')) nextService = 'IoT / Hologram / 3D Experience';
+      if (normalized.includes('service_team')) nextService = 'Talk with Team';
 
-      // Existing IDs
-      if (normalized.includes("service_automation")) nextService = "Improve / Automate my business";
-      if (normalized.includes("service_web")) nextService = "Website / Mobile App";
-      if (normalized.includes("service_crm")) nextService = "CRM / Business System";
-      if (normalized.includes("service_iot")) nextService = "IoT / Hologram / 3D Experience";
-      if (normalized.includes("service_team")) nextService = "Talk with Team";
-
-      // Meta titles (from list_reply.title / button_reply.title)
       if (!nextService) {
-        if (normalized.includes("ai agent") || normalized.includes("ai")) nextService = "AI Agent / Chatbot";
-        if (normalized.includes("build software") || (normalized.includes("build") && normalized.includes("software")) || normalized.includes("build")) {
-          nextService = "Build new software idea";
+        if (normalized.includes('ai agent') || normalized.includes('ai')) nextService = 'AI Agent / Chatbot';
+        if (normalized.includes('build software') || (normalized.includes('build') && normalized.includes('software')) || normalized.includes('build')) {
+          nextService = 'Build new software idea';
         }
-        if (normalized.includes("improve business") || normalized.includes("improve") || normalized.includes("automate")) {
-          nextService = "Improve / Automate my business";
+        if (normalized.includes('improve business') || normalized.includes('improve') || normalized.includes('automate')) {
+          nextService = 'Improve / Automate my business';
         }
       }
 
-      // Free-text keyword mapping (fallback)
       if (!nextService) {
-        if (normalized.includes("automate") || normalized.includes("business") || normalized.includes("grow")) nextService = "Improve / Automate my business";
-        if (normalized.includes("software") || normalized.includes("idea") || normalized.includes("build")) nextService = "Build new software idea";
-        if (normalized.includes("agent") || normalized.includes("chatbot") || normalized.includes("ai")) nextService = "AI Agent / Chatbot";
-        if (normalized.includes("website") || normalized.includes("mobile") || normalized.includes("app")) nextService = "Website / Mobile App";
-        if (normalized.includes("crm") || normalized.includes("system")) nextService = "CRM / Business System";
-        if (normalized.includes("iot") || normalized.includes("hologram") || normalized.includes("3d")) nextService = "IoT / Hologram / 3D Experience";
-        if (normalized.includes("team") || normalized.includes("talk")) nextService = "Talk with Team";
+        if (normalized.includes('automate') || normalized.includes('business') || normalized.includes('grow')) nextService = 'Improve / Automate my business';
+        if (normalized.includes('software') || normalized.includes('idea') || normalized.includes('build')) nextService = 'Build new software idea';
+        if (normalized.includes('agent') || normalized.includes('chatbot') || normalized.includes('ai')) nextService = 'AI Agent / Chatbot';
+        if (normalized.includes('website') || normalized.includes('mobile') || normalized.includes('app')) nextService = 'Website / Mobile App';
+        if (normalized.includes('crm') || normalized.includes('system')) nextService = 'CRM / Business System';
+        if (normalized.includes('iot') || normalized.includes('hologram') || normalized.includes('3d')) nextService = 'IoT / Hologram / 3D Experience';
+        if (normalized.includes('team') || normalized.includes('talk')) nextService = 'Talk with Team';
       }
     }
 
     const flowStepBefore = flowStep;
     const selectedServiceBefore = selectedService;
 
-    console.log("[DISCOVERY]", {
+    console.log('[DISCOVERY]', {
       flowStepBefore,
       selectedServiceBefore,
       incomingBody: params.inboundBody,
       nextService,
-      flowStepAfter: nextService ? "REQUIREMENT_COLLECTION" : flowStep,
+      flowStepAfter: nextService ? 'REQUIREMENT_COLLECTION' : flowStep,
       selectedServiceAfter: nextService || selectedService
     });
 
-
     if (!nextService) {
-      // Re-send discovery buttons
       await sendWhatsAppInteractiveMessage({
         organizationId: params.organizationId,
         conversationId: conversation.id,
         payload: {
-          type: "interactive",
+          type: 'interactive',
           interactive: {
-            type: "list",
-            header: { type: "text", text: "Select Service" },
-            body: { text: nextLanguageBody(language) },
+            type: 'list',
+            header: { type: 'text', text: 'Select Service' },
+            body: { text: language === 'TELUGU' ? '???? Revanta AI ??? ????? ????????' : 'How can Revanta AI help you?' },
             action: {
-              button: "Choose",
+              button: 'Choose',
               sections: [
                 {
-                  title: "Select Service",
+                  title: 'Select Service',
                   rows: [
-                    { id: "service_automation", title: "Improve Business" },
-                    { id: "service_software", title: "Build Software" },
-                    { id: "service_ai", title: "AI Agent" },
-                    { id: "service_web", title: "Website / App" },
-                    { id: "service_crm", title: "CRM System" },
-                    { id: "service_iot", title: "IoT / 3D Experience" },
-                    { id: "service_team", title: "Talk with Team" }
+                    { id: 'service_automation', title: 'Improve Business' },
+                    { id: 'service_software', title: 'Build Software' },
+                    { id: 'service_ai', title: 'AI Agent' },
+                    { id: 'service_web', title: 'Website / App' },
+                    { id: 'service_crm', title: 'CRM System' },
+                    { id: 'service_iot', title: 'IoT / 3D Experience' },
+                    { id: 'service_team', title: 'Talk with Team' }
                   ]
                 }
               ]
             }
           }
         },
-        metadata: { source: "consultant", language }
+        metadata: { source: 'consultant', language }
       });
+
+      await scheduleConversationReminder({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        leadId: conversation.leadId,
+        reminderType: 'DISCOVERY',
+        scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+        actorId: params.actorId
+      });
+
+      await setConversationMetadata({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        patch: { flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+      });
+
       return { skipped: false };
     }
 
     await setConversationMetadata({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { selectedService: nextService, flowStep: "REQUIREMENT_COLLECTION", lastBotInteraction: now.toISOString() }
+      patch: { selectedService: nextService, flowStep: 'REQUIREMENT_COLLECTION', lastBotInteraction: now.toISOString() }
     });
 
     const askIntro =
-      language === "TELUGU"
-        ? "పరిష్కారం సూచించే ముందు, కొన్ని వివరాలు తెలుసుకోవాలనుకుంటున్నాం.\n\n1) మీరు ఏ బిజినెస్ చేస్తారు?\n2) ప్రస్తుతం మీ పెద్ద సమస్య ఏమిటి?\n3) మీరు కోరుకునే ఫలితం ఏమిటి?"
-        : "Before we suggest a solution, we need a few details.\n\n1) What business do you run?\n2) What is the biggest challenge today?\n3) What outcome do you expect?";
+      language === 'TELUGU'
+        ? '????????? ??????? ?????, ?????? ??????? ???????????????????????.\n\n1) ???? ? ???????? ?????????\n2) ????????? ?? ????? ????? ??????\n3) ???? ???????? ????? ??????'
+        : 'Before we suggest a solution, we need a few details.\n\n1) What business do you run?\n2) What is the biggest challenge today?\n3) What outcome do you expect?';
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
       text: askIntro,
-      metadata: { source: "consultant", autoReply: true, language }
+      metadata: { source: 'consultant', autoReply: true, language }
+    });
+
+    await scheduleConversationReminder({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      leadId: conversation.leadId,
+      reminderType: 'REQUIREMENT_COLLECTION',
+      scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+      actorId: params.actorId
     });
 
     return { skipped: false };
   }
 
-  if (flowStep === "REQUIREMENT_COLLECTION") {
-    // Use AI Brain to extract structured requirement.
+  if (flowStep === 'REQUIREMENT_COLLECTION') {
     let parsed: Record<string, unknown> = {};
     try {
       const brain = await runAIPrompt({
         organizationId: params.organizationId,
         userId: params.actorId || conversation.assignedToId || null,
-        purpose: "reply",
+        purpose: 'reply',
         prompt: JSON.stringify({
           language,
           selectedService,
@@ -846,7 +913,7 @@ async function handleConsultantConversation(params: {
         }),
         parseJson: true,
         system:
-          "You are a business consultant for Revanta OS WhatsApp. Extract: businessType, currentProblems (array), expectedOutcome, featuresRequired (array), timeline, referenceRequest (boolean), pricingOrMeeting (boolean), complexRequest (boolean), confidence (0-1). Return JSON only."
+          'You are a business consultant for Revanta OS WhatsApp. Extract: businessType, currentProblems (array), expectedOutcome, featuresRequired (array), timeline, referenceRequest (boolean), pricingOrMeeting (boolean), complexRequest (boolean), confidence (0-1). Return JSON only.'
       });
       parsed = (brain.parsed || {}) as Record<string, unknown>;
     } catch {
@@ -854,85 +921,99 @@ async function handleConsultantConversation(params: {
     }
 
     const pricingOrMeeting =
-      normalized.includes("price") ||
-      normalized.includes("pricing") ||
-      normalized.includes("meeting") ||
-      normalized.includes("call") ||
-      normalized.includes("quote");
+      normalized.includes('price') ||
+      normalized.includes('pricing') ||
+      normalized.includes('meeting') ||
+      normalized.includes('call') ||
+      normalized.includes('quote');
 
-    const confidence = typeof parsed.confidence === "number" ? (parsed.confidence as number) : 0.3;
+    const confidence = typeof parsed.confidence === 'number' ? (parsed.confidence as number) : 0.3;
 
     if (pricingOrMeeting || confidence < 0.25) {
       await prisma.conversation.update({
         where: { id: conversation.id },
         data: {
-          aiState: "HUMAN_ACTIVE",
+          aiState: 'HUMAN_ACTIVE',
           humanTakeoverAt: now,
           metadata: toJsonValue({
             ...(conversation.metadata ? toJsonObject(conversation.metadata) : {}),
-            flowStep: "HUMAN",
+            flowStep: 'HUMAN',
             lastBotInteraction: now.toISOString(),
-            handoffReason: "pricing_or_low_confidence"
+            handoffReason: 'pricing_or_low_confidence'
           })
         }
       });
-      return { skipped: true, reason: "Human takeover requested" };
+      return { skipped: true, reason: 'Human takeover requested' };
     }
 
     const problems = Array.isArray(parsed.currentProblems)
-      ? (parsed.currentProblems as unknown[]).filter((x) => typeof x === "string").join(", ")
+      ? (parsed.currentProblems as unknown[]).filter((value) => typeof value === 'string').join(', ')
       : null;
-    const outcome = typeof parsed.expectedOutcome === "string" ? (parsed.expectedOutcome as string) : null;
+    const outcome = typeof parsed.expectedOutcome === 'string' ? (parsed.expectedOutcome as string) : null;
 
-    const consultantText =
-      language === "TELUGU"
-        ? `మీ అవసరాన్ని బట్టి, మీ ప్రధాన సవాల్: ${problems || "(స్పష్టంగా తెలియడం లేదు)"}.\nమీకు కావాల్సిన ఫలితం: ${outcome || "(స్పష్టంగా తెలియడం లేదు)"}.\n\nఇప్పుడు మీకు కావాల్సిన ఫీచర్లు/సామర్థ్యాలు ఏవి?`
-        : `Based on what you shared, your current pain points: ${problems || "(not fully specified)"}.\nExpected outcome: ${outcome || "(not fully specified)"}.\n\nWhat features do you need?`;
+    const consultantText = language === 'TELUGU'
+      ? '?? ????????? ?????, ?? ?????? ???????: ' + (problems || '(????????? ??????? ????)') + '.\n???? ????????? ?????: ' + (outcome || '(????????? ??????? ????)') + '.\n\n??????? ???? ????????? ???????/??????????? ????'
+      : 'Based on what you shared, your current pain points: ' + (problems || '(not fully specified)') + '.\nExpected outcome: ' + (outcome || '(not fully specified)') + '.\n\nWhat features do you need?';
 
     await setConversationMetadata({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { flowStep: "CONSULTATION", lastBotInteraction: now.toISOString() }
+      patch: { flowStep: 'CONSULTATION', lastBotInteraction: now.toISOString() }
     });
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
       text: consultantText,
-      metadata: { source: "consultant", autoReply: true, language }
+      metadata: { source: 'consultant', autoReply: true, language }
     });
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      text:
-        language === "TELUGU"
-          ? "మీకు ఇష్టమైన రిఫరెన్స్ యాప్/వెబ్‌సైట్/ఉదాహరణ ఏమైనా ఉన్నాయా? లింక్ లేదా స్క్రీన్‌షాట్ పంపండి."
-          : "Do you have any reference app, website, or example you like? You can share link or screenshot.",
-      metadata: { source: "consultant", autoReply: true, language }
+      text: language === 'TELUGU'
+          ? '???? ??????? reference app, website, or example ????? ????? link ???? screenshot ??????.'
+          : 'Do you have any reference app, website, or example you like? You can share link or screenshot.',
+      metadata: { source: 'consultant', autoReply: true, language }
+    });
+
+    await scheduleConversationReminder({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      leadId: conversation.leadId,
+      reminderType: 'CONSULTATION',
+      scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+      actorId: params.actorId
     });
 
     return { skipped: false };
   }
 
-  // CONSULTATION or fallback
-  if (flowStep === "CONSULTATION") {
+  if (flowStep === 'CONSULTATION') {
     await setConversationMetadata({
       organizationId: params.organizationId,
       conversationId: conversation.id,
       patch: { lastBotInteraction: now.toISOString() }
     });
 
-    const follow =
-      language === "TELUGU"
-        ? "అద్భుతం. తదుపరి దశగా, మీ టైమ్‌లైన్ మరియు కావాల్సిన ముఖ్య ఫీచర్లపై కాస్త వివరించండి."
-        : "Great. Next, share your timeline and the key features you want.";
+    const follow = language === 'TELUGU'
+      ? '???????. ?????? ????, ?? timeline ????? ???? ????????? ????? features ??????????.'
+      : 'Great. Next, share your timeline and the key features you want.';
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
       conversationId: conversation.id,
       text: follow,
-      metadata: { source: "consultant", autoReply: true, language }
+      metadata: { source: 'consultant', autoReply: true, language }
+    });
+
+    await scheduleConversationReminder({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      leadId: conversation.leadId,
+      reminderType: 'CONSULTATION',
+      scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+      actorId: params.actorId
     });
 
     return { skipped: false };
@@ -941,7 +1022,7 @@ async function handleConsultantConversation(params: {
   await setConversationMetadata({
     organizationId: params.organizationId,
     conversationId: conversation.id,
-    patch: { flowStep: "DISCOVERY", lastBotInteraction: now.toISOString() }
+    patch: { flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
   });
 
   return handleConsultantConversation({
@@ -950,10 +1031,6 @@ async function handleConsultantConversation(params: {
     inboundBody: params.inboundBody,
     actorId: params.actorId
   });
-}
-
-function nextLanguageBody(language: "ENGLISH" | "TELUGU") {
-  return language === "TELUGU" ? "మీకు Revanta AI ఎలా సహాయం చేయగలదు?" : "How can Revanta AI help you?";
 }
 
 async function sendAutomaticWhatsAppReply(params: {
@@ -1161,6 +1238,12 @@ export async function processIncomingWhatsAppMessage(params: {
     }
   });
 
+  await cancelPendingConversationReminders({
+    organizationId: params.organizationId,
+    conversationId: conversation.id,
+    actorId: assignedToId
+  });
+
   const autoReply = await sendAutomaticWhatsAppReply({
     organizationId: params.organizationId,
     conversationId: conversation.id,
@@ -1170,6 +1253,7 @@ export async function processIncomingWhatsAppMessage(params: {
 
   return { lead, contact, conversation, message, autoReply };
 }
+
 
 // removed duplicate storeOutgoingWhatsAppMessage implementation
 
@@ -1291,4 +1375,3 @@ export async function resolveOrganizationFromPhoneNumberId(phoneNumberId: string
   const integration = await findWhatsAppIntegrationByPhoneNumberId(phoneNumberId);
   return integration?.organizationId || null;
 }
-

@@ -4,6 +4,18 @@ import { Card } from "@/components/ui";
 import { getSessionUser } from "@/lib/revanta-os/auth";
 import { getCustomer360Profile } from "@/lib/revanta-os/customers";
 
+function formatMeetingDate(value: string | Date | null | undefined) {
+  if (!value) return "Not set";
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 export default async function CustomerDetailPage({
   params
 }: Readonly<{
@@ -35,7 +47,7 @@ export default async function CustomerDetailPage({
             {displayName}
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            {customer.lead?.status || "Lead"} · {customer.lead?.score ?? "No score"} ·{" "}
+            {customer.lead?.status || "Lead"} Â· {customer.lead?.score ?? "No score"} Â·{" "}
             {customer.lead?.industry || customer.company?.industry || "Industry not set"}
           </p>
         </div>
@@ -76,6 +88,32 @@ export default async function CustomerDetailPage({
 
         <div className="space-y-6">
           <Card className="bg-white">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Meeting</p>
+            <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-medium text-slate-950">Meeting Scheduled</p>
+                <p>{customer.lead?.meetingScheduled ? "Yes" : "No"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-medium text-slate-950">Meeting Date</p>
+                <p>{formatMeetingDate(customer.lead?.meetingBookedAt)}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-medium text-slate-950">Calendly Event ID</p>
+                <p>{customer.lead?.calendlyEventId || "Not set"}</p>
+              </div>
+              {customer.lead?.calendlyBookingUrl ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="font-medium text-slate-950">Calendly Booking URL</p>
+                  <a className="text-sky-700 underline" href={customer.lead.calendlyBookingUrl} target="_blank" rel="noreferrer">
+                    Open booking link
+                  </a>
+                </div>
+              ) : null}
+            </div>
+          </Card>
+
+          <Card className="bg-white">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">AI summary</p>
             <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
               {customer.aiSummary ? (
@@ -105,7 +143,7 @@ export default async function CustomerDetailPage({
             <div className="mt-4 space-y-3">
               {customer.whatsappMessages.map((message: typeof customer.whatsappMessages[number]) => (
                 <div key={message.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="font-medium text-slate-950">{message.direction} · {message.status || "unknown"}</p>
+                  <p className="font-medium text-slate-950">{message.direction} Â· {message.status || "unknown"}</p>
                   <p className="text-sm text-slate-600">{message.body}</p>
                 </div>
               ))}
@@ -133,7 +171,7 @@ export default async function CustomerDetailPage({
             {customer.openOpportunities.map((deal: typeof customer.openOpportunities[number]) => (
               <div key={deal.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-950">{deal.title}</p>
-                <p className="text-sm text-slate-600">{deal.stage} · ${Number(deal.amount || 0).toFixed(2)}</p>
+                <p className="text-sm text-slate-600">{deal.stage} Â· ${Number(deal.amount || 0).toFixed(2)}</p>
               </div>
             ))}
           </div>

@@ -5,6 +5,8 @@ import { jsonError, jsonOk, safeJson } from "@/lib/revanta-os/http";
 import { triggerWorkflowEvent } from "@/lib/revanta-os/workflows";
 import { qualifyLeadWithBrain } from "@/lib/revanta-os/ai";
 import { toJsonObject, toJsonValue } from "@/lib/revanta-os/json";
+import { buildCalendlyQualifiedMessage, getCalendlyBookingUrl } from "@/lib/revanta-os/calendly";
+import { sendWhatsAppTextMessage } from "@/lib/revanta-os/whatsapp";
 
 export async function GET(request: NextRequest) {
   const session = await getSessionFromRequest(request);
@@ -72,6 +74,12 @@ export async function POST(request: NextRequest) {
     where: { id: lead.id },
     data: {
       score: typeof parsedQualification.score === "number" ? parsedQualification.score : lead.score,
+      status:
+        typeof parsedQualification.status === "string"
+          ? (parsedQualification.status as any)
+          : typeof parsedQualification.score === "number" && parsedQualification.score >= 70
+            ? "QUALIFIED"
+            : undefined,
       intent: typeof parsedQualification.intent === "string" ? parsedQualification.intent : undefined,
       industry: typeof parsedQualification.industry === "string" ? parsedQualification.industry : undefined,
       recommendedService:
@@ -81,6 +89,7 @@ export async function POST(request: NextRequest) {
       nextBestAction:
         typeof parsedQualification.nextBestAction === "string" ? parsedQualification.nextBestAction : undefined,
       aiQualifiedAt: new Date(),
+      calendlyBookingUrl: getCalendlyBookingUrl() || undefined,
       enrichment: toJsonValue({
         ...toJsonObject(lead.enrichment),
         aiQualification: parsedQualification
@@ -99,10 +108,10 @@ export async function POST(request: NextRequest) {
   });
 
   await triggerWorkflowEvent({
-      organizationId: session.orgId,
-      actorId: session.userId,
-      eventType: "LEAD_CREATED",
-      payload: {
+    organizationId: session.orgId,
+    actorId: session.userId,
+    eventType: "LEAD_CREATED",
+    payload: {
       leadId: updatedLead.id,
       companyName: updatedLead.companyName,
       fullName: updatedLead.fullName,
@@ -114,7 +123,46 @@ export async function POST(request: NextRequest) {
       intent: updatedLead.intent,
       industry: updatedLead.industry,
       recommendedService: updatedLead.recommendedService
-      }
+    }
+  });
+
+  const bookingUrl = getCalendlyBookingUrl();
+  if (updatedLead.status === "QUALIFIED" && bookingUrl) {
+    const conversation = await database.conversation.findFirst({
+      where: {
+        organizationId: session.orgId,
+        leadId: updatedLead.id,
+        channel: "WHATSAPP"
+      },
+      include: { lead: true, contact: true },
+      orderBy: { updatedAt: "desc" }
     });
+
+    if (conversation) {
+      const bookingMessage = buildCalendlyQualifiedMessage(bookingUrl);
+      if (bookingMessage) {
+        await database.conversation.update({
+          where: { id: conversation.id },
+          data: {
+            metadata: toJsonValue({
+              ...(conversation.metadata && typeof conversation.metadata === "object" && !Array.isArray(conversation.metadata)
+                ? (conversation.metadata as Record<string, unknown>)
+                : {}),
+              flowStep: "BOOK_DISCOVERY_CALL",
+              lastBotInteraction: new Date().toISOString(),
+              calendlyBookingUrl: bookingUrl
+            })
+          }
+        });
+
+        await sendWhatsAppTextMessage({
+          organizationId: session.orgId,
+          conversationId: conversation.id,
+          text: bookingMessage,
+          metadata: { source: "consultant", autoReply: true, calendlyBookingUrl: bookingUrl }
+        });
+      }
+    }
+  }
   return jsonOk(updatedLead, { status: 201 });
 }
