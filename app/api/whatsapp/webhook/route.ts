@@ -88,11 +88,31 @@ export async function POST(request: NextRequest) {
           hasText: !!message.text?.body
         });
 
+
+
         try {
+          const interactive = message.interactive ?? null;
+          const interactiveListId = interactive?.list_reply?.id;
+          const interactiveListTitle = interactive?.list_reply?.title;
+          const interactiveButtonId = interactive?.button_reply?.id;
+          const interactiveButtonTitle = interactive?.button_reply?.title;
+
+          // Prefer the stable ID (e.g. service_ai). Fall back to title for robustness.
+          const interactiveSelection =
+            typeof interactiveListId === "string"
+              ? interactiveListId
+              : typeof interactiveButtonId === "string"
+                ? interactiveButtonId
+                : typeof interactiveListTitle === "string"
+                  ? interactiveListTitle
+                  : typeof interactiveButtonTitle === "string"
+                    ? interactiveButtonTitle
+                    : null;
+
           await processIncomingWhatsAppMessage({
             organizationId,
             from,
-            body: message.text?.body || message.caption || "[non-text message]",
+            body: interactiveSelection || message.text?.body || message.caption || "[non-text message]",
             messageId: message.id,
             name: contactName,
             phoneNumberId,
@@ -101,10 +121,8 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error("[WA_PROCESS_ERROR]", error);
         }
-
-
-      	
       }
+
 
 
       for (const status of value.statuses ?? []) {

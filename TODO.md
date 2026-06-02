@@ -1,5 +1,10 @@
-- [ ] Locate DISCOVERY fallback/resend list payload in lib/revanta-os/whatsapp.ts
-- [ ] Replace ALL DISCOVERY list row titles with shortened titles used in LANGUAGE_SELECTION
-- [ ] Ensure no remaining occurrences of the old long titles in WhatsApp list row definitions
-- [ ] Run build
-- [ ] Provide exact diff
+- [ ] Add diagnostic logs for interactive selection + flowStep transitions
+- [ ] Harden DISCOVERY to map both list/button IDs and titles so state advances
+- [ ] Implement inactivity follow-up system:
+  - [ ] Add Prisma model(s) for scheduled follow-ups/reminders
+  - [ ] Add scheduler/worker endpoint
+  - [ ] Add cancellation logic on inbound reply
+  - [ ] Prevent duplicates
+  - [ ] Support multi-step reminder sequences
+- [ ] Testing procedure + deployment checklist
+

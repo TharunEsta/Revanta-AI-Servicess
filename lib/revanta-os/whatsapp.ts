@@ -722,19 +722,34 @@ async function handleConsultantConversation(params: {
   }
 
   if (flowStep === "DISCOVERY") {
-    // If interactive replies come as plain text, map by keyword.
+    // Map interactive selection (Meta IDs/titles) into canonical service.
     let nextService: string | null = selectedService;
 
     if (!nextService) {
-      if (normalized.includes("service_automation")) nextService = "Improve / Automate my business";
-      if (normalized.includes("service_software")) nextService = "Build new software idea";
+      // Meta IDs (from list_reply.id / button_reply.id)
+      if (normalized.includes("service_business")) nextService = "Improve / Automate my business";
       if (normalized.includes("service_ai")) nextService = "AI Agent / Chatbot";
+      if (normalized.includes("service_software")) nextService = "Build new software idea";
+
+      // Existing IDs
+      if (normalized.includes("service_automation")) nextService = "Improve / Automate my business";
       if (normalized.includes("service_web")) nextService = "Website / Mobile App";
       if (normalized.includes("service_crm")) nextService = "CRM / Business System";
       if (normalized.includes("service_iot")) nextService = "IoT / Hologram / 3D Experience";
       if (normalized.includes("service_team")) nextService = "Talk with Team";
 
-      // fallback keyword mapping for free-text replies
+      // Meta titles (from list_reply.title / button_reply.title)
+      if (!nextService) {
+        if (normalized.includes("ai agent") || normalized.includes("ai")) nextService = "AI Agent / Chatbot";
+        if (normalized.includes("build software") || (normalized.includes("build") && normalized.includes("software")) || normalized.includes("build")) {
+          nextService = "Build new software idea";
+        }
+        if (normalized.includes("improve business") || normalized.includes("improve") || normalized.includes("automate")) {
+          nextService = "Improve / Automate my business";
+        }
+      }
+
+      // Free-text keyword mapping (fallback)
       if (!nextService) {
         if (normalized.includes("automate") || normalized.includes("business") || normalized.includes("grow")) nextService = "Improve / Automate my business";
         if (normalized.includes("software") || normalized.includes("idea") || normalized.includes("build")) nextService = "Build new software idea";
@@ -745,6 +760,19 @@ async function handleConsultantConversation(params: {
         if (normalized.includes("team") || normalized.includes("talk")) nextService = "Talk with Team";
       }
     }
+
+    const flowStepBefore = flowStep;
+    const selectedServiceBefore = selectedService;
+
+    console.log("[DISCOVERY]", {
+      flowStepBefore,
+      selectedServiceBefore,
+      incomingBody: params.inboundBody,
+      nextService,
+      flowStepAfter: nextService ? "REQUIREMENT_COLLECTION" : flowStep,
+      selectedServiceAfter: nextService || selectedService
+    });
+
 
     if (!nextService) {
       // Re-send discovery buttons
