@@ -18,6 +18,52 @@ function getRetryDelayMinutes(retryCount: number) {
   return Math.min(60, 5 * 2 ** Math.max(0, retryCount));
 }
 
+const MEETING_LINK_PATTERNS = [
+  /https?:\/\/meet\.google\.com\/[^\s]+/i,
+  /https?:\/\/(?:[\w-]+\.)?zoom\.us\/[^\s]+/i,
+  /https?:\/\/teams\.microsoft\.com\/[^\s]+/i,
+  /https?:\/\/calendly\.com\/[^\s]+/i
+];
+
+function extractMeetingLink(text: string) {
+  for (const pattern of MEETING_LINK_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[0];
+    }
+  }
+
+  return null;
+}
+
+function buildHumanHandoffMessage(language: "ENGLISH" | "TELUGU", bookingUrl?: string | null) {
+  if (language === "TELUGU") {
+    return bookingUrl
+      ? `ధన్యవాదాలు. మీ అభ్యర్థనను మా టీమ్‌కు పంపించాము.\n\nమీకు సౌకర్యంగా ఉంటే ఈ లింక్‌లో డిస్కవరీ కాల్ బుక్ చేసుకోవచ్చు:\n${bookingUrl}`
+      : "ధన్యవాదాలు. మీ అభ్యర్థనను మా టీమ్‌కు పంపించాము. మా టీమ్ త్వరలో మీతో సంప్రదిస్తుంది.";
+  }
+
+  return bookingUrl
+    ? `Thanks for sharing the details. I have routed this to our team.\n\nYou can also book a discovery call here:\n${bookingUrl}`
+    : "Thanks for sharing the details. I have routed this to our team, and someone will follow up with you shortly.";
+}
+
+function buildMeetingLinkAcknowledgementMessage(params: {
+  language: "ENGLISH" | "TELUGU";
+  sharedLink: string;
+  bookingUrl?: string | null;
+}) {
+  if (params.language === "TELUGU") {
+    return params.bookingUrl
+      ? `మీరు మీటింగ్ లింక్ షేర్ చేసినందుకు ధన్యవాదాలు.\n${params.sharedLink}\n\nమా టీమ్ దీనిని సమీక్షిస్తుంది. మీరు ఇష్టపడితే మా డిస్కవరీ కాల్‌ను కూడా ఇక్కడ బుక్ చేసుకోవచ్చు:\n${params.bookingUrl}`
+      : `మీరు మీటింగ్ లింక్ షేర్ చేసినందుకు ధన్యవాదాలు.\n${params.sharedLink}\n\nమా టీమ్ దీనిని సమీక్షించి త్వరలో మీతో సంప్రదిస్తుంది.`;
+  }
+
+  return params.bookingUrl
+    ? `Thanks for sharing the meeting link:\n${params.sharedLink}\n\nOur team will review it. If you prefer, you can also book directly on our calendar here:\n${params.bookingUrl}`
+    : `Thanks for sharing the meeting link:\n${params.sharedLink}\n\nOur team will review it and get back to you shortly.`;
+}
+
 async function findWhatsAppIntegrationByPhoneNumberId(phoneNumberId: string) {
   return prisma.whatsAppIntegration.findFirst({
     where: { phoneNumberId },
@@ -216,6 +262,84 @@ async function setConversationMetadata(params: {
       })
     }
   });
+}
+
+async function writeConversationLog(params: {
+  organizationId: string;
+  actorId?: string | null;
+  eventType: string;
+  message: string;
+  payload?: Record<string, unknown>;
+  level?: "INFO" | "WARN" | "ERROR" | "SUCCESS";
+}) {
+  await prisma.executionLog.create({
+    data: {
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: params.eventType,
+      level: params.level || "INFO",
+      message: params.message,
+      payload: params.payload ? toJsonValue(params.payload) : undefined
+    }
+  });
+}
+
+async function transitionConversationState(params: {
+  organizationId: string;
+  conversationId: string;
+  toState: string;
+  actorId?: string | null;
+  reason?: string;
+  patch?: Record<string, unknown>;
+  aiState?: "AI_ACTIVE" | "HUMAN_ACTIVE";
+  humanTakeoverAt?: Date | null;
+  status?: "OPEN" | "PENDING" | "CLOSED" | "ARCHIVED";
+}) {
+  const conversation = await prisma.conversation.findFirst({
+    where: { id: params.conversationId, organizationId: params.organizationId }
+  });
+  if (!conversation) {
+    return { fromState: "UNKNOWN", toState: params.toState };
+  }
+
+  const currentMetadata = conversation.metadata ? toJsonObject(conversation.metadata) : {};
+  const fromState =
+    typeof currentMetadata.flowStep === "string" ? String(currentMetadata.flowStep) : "NEW";
+  const nextMetadata = {
+    ...currentMetadata,
+    ...(params.patch || {}),
+    flowStep: params.toState,
+    lastBotInteraction:
+      typeof params.patch?.lastBotInteraction === "string"
+        ? params.patch.lastBotInteraction
+        : new Date().toISOString()
+  };
+
+  await prisma.conversation.update({
+    where: { id: params.conversationId },
+    data: {
+      metadata: toJsonValue(nextMetadata),
+      aiState: params.aiState,
+      humanTakeoverAt:
+        params.humanTakeoverAt !== undefined ? params.humanTakeoverAt : undefined,
+      status: params.status
+    }
+  });
+
+  await writeConversationLog({
+    organizationId: params.organizationId,
+    actorId: params.actorId || null,
+    eventType: "WHATSAPP_STATE_CHANGE",
+    message: `[STATE_CHANGE] conversationId=${params.conversationId} from=${fromState} to=${params.toState}`,
+    payload: {
+      conversationId: params.conversationId,
+      fromState,
+      toState: params.toState,
+      reason: params.reason || null
+    }
+  });
+
+  return { fromState, toState: params.toState };
 }
 
 const REMINDER_DELAY_MINUTES = 5;
@@ -655,14 +779,6 @@ async function handleConsultantConversation(params: {
     where: { organizationId: params.organizationId }
   });
 
-  if (!getAutoReplyEnabled(integration?.settings)) {
-    return { skipped: true, reason: 'Auto reply disabled' };
-  }
-
-  if (conversation.aiState === 'HUMAN_ACTIVE' || conversation.humanTakeoverAt) {
-    return { skipped: true, reason: 'Human takeover active' };
-  }
-
   const lead = conversation.lead;
   const meta = (conversation.metadata || {}) as Record<string, unknown>;
   const language = (typeof meta.language === 'string' ? meta.language : 'ENGLISH') as 'ENGLISH' | 'TELUGU';
@@ -674,12 +790,95 @@ async function handleConsultantConversation(params: {
   const normalized = params.inboundBody.toLowerCase();
   const calendlyBookingUrl = getCalendlyBookingUrl();
   const meetingIntent = hasCalendlyMeetingIntent(params.inboundBody);
-
-  const wantsHuman =
+  const sharedMeetingLink = extractMeetingLink(params.inboundBody);
+  const pricingIntent =
     normalized.includes('price') ||
     normalized.includes('pricing') ||
     normalized.includes('cost') ||
-    normalized.includes('quote') ||
+    normalized.includes('quote');
+  const activeFlowStep = flowStep;
+
+  await writeConversationLog({
+    organizationId: params.organizationId,
+    actorId: params.actorId || null,
+    eventType: "WHATSAPP_FLOW_ENTER",
+    message: `[FLOW_ENTER] conversationId=${conversation.id} flow=${activeFlowStep}`,
+    payload: {
+      conversationId: conversation.id,
+      flowStep: activeFlowStep,
+      aiState: conversation.aiState,
+      inboundBody: params.inboundBody
+    }
+  });
+
+  const exitFlow = async (result: { skipped: boolean; reason?: string; outcome?: string }, extra?: Record<string, unknown>) => {
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_FLOW_EXIT",
+      message: `[FLOW_EXIT] conversationId=${conversation.id} flow=${activeFlowStep} outcome=${result.outcome || result.reason || (result.skipped ? "skipped" : "completed")}`,
+      payload: {
+        conversationId: conversation.id,
+        flowStep: activeFlowStep,
+        skipped: result.skipped,
+        reason: result.reason || null,
+        outcome: result.outcome || null,
+        ...(extra || {})
+      }
+    });
+
+    return result;
+  };
+
+  if (!getAutoReplyEnabled(integration?.settings)) {
+    await transitionConversationState({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'HUMAN',
+      reason: 'auto_reply_disabled',
+      aiState: 'HUMAN_ACTIVE',
+      humanTakeoverAt: now,
+      status: 'PENDING',
+      patch: {
+        handoffReason: 'auto_reply_disabled',
+        flowOutcome: 'awaiting_human_followup'
+      }
+    });
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: buildHumanHandoffMessage(language, null),
+      metadata: {
+        source: 'consultant',
+        autoReply: false,
+        language,
+        handoffReason: 'auto_reply_disabled'
+      }
+    });
+
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_HUMAN_HANDOFF",
+      message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        handoffReason: 'auto_reply_disabled'
+      }
+    });
+
+    return exitFlow({ skipped: false, outcome: 'manual_mode_handoff_notified' });
+  }
+
+  if (conversation.aiState === 'HUMAN_ACTIVE' || conversation.humanTakeoverAt) {
+    if (!sharedMeetingLink) {
+      return exitFlow({ skipped: true, reason: 'Human takeover active', outcome: 'awaiting_human_followup' });
+    }
+  }
+
+  const wantsHuman =
     normalized.includes('meeting') ||
     normalized.includes('call') ||
     normalized.includes('talk') ||
@@ -690,10 +889,169 @@ async function handleConsultantConversation(params: {
     normalized.includes('complex') ||
     normalized.includes('custom');
 
-  if (meetingIntent && calendlyBookingUrl) {
-    await setConversationMetadata({
+  if (sharedMeetingLink) {
+    await prisma.executionLog.create({
+      data: {
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_MEETING_LINK",
+        level: "INFO",
+        message: `[MEETING_LINK_DETECTED] conversationId=${conversation.id}`,
+        payload: toJsonValue({
+          conversationId: conversation.id,
+          sharedMeetingLink
+        })
+      }
+    });
+
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'BOOK_DISCOVERY_CALL',
+      reason: 'meeting_link_detected',
+      patch: {
+        flowStep: 'BOOK_DISCOVERY_CALL',
+        lastBotInteraction: now.toISOString(),
+        sharedMeetingLink,
+        calendlyBookingUrl
+      }
+    });
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: buildMeetingLinkAcknowledgementMessage({
+        language,
+        sharedLink: sharedMeetingLink,
+        bookingUrl: calendlyBookingUrl
+      }),
+      metadata: {
+        source: 'consultant',
+        autoReply: true,
+        language,
+        sharedMeetingLink,
+        calendlyBookingUrl
+      }
+    });
+
+    return exitFlow({ skipped: false, outcome: 'meeting_link_acknowledged' }, { sharedMeetingLink });
+  }
+
+  if (pricingIntent) {
+    if (calendlyBookingUrl) {
+      await transitionConversationState({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        actorId: params.actorId,
+        toState: 'BOOK_DISCOVERY_CALL',
+        reason: 'pricing_intent_detected',
+        patch: {
+          calendlyBookingUrl,
+          flowOutcome: 'awaiting_booking'
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text:
+          language === 'TELUGU'
+            ? `ధరలు మీ అవసరాలపై ఆధారపడి ఉంటాయి. సరైన పరిధి చెప్పేందుకు చిన్న డిస్కవరీ కాల్ ఉత్తమ మార్గం.\n\n${buildCalendlyDiscoveryCallMessage(calendlyBookingUrl)!}`
+            : `Pricing depends on your exact scope, timeline, and features. The best next step is a short discovery call so we can give the right recommendation.\n\n${buildCalendlyDiscoveryCallMessage(calendlyBookingUrl)!}`,
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          calendlyBookingUrl,
+          pricingIntent: true
+        }
+      });
+
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_QUALIFIED",
+        message: `[QUALIFIED] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          qualificationPath: 'pricing_intent',
+          selectedService
+        }
+      });
+
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_CALENDLY_OFFERED",
+        message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          calendlyBookingUrl,
+          qualificationPath: 'pricing_intent'
+        }
+      });
+
+      await scheduleConversationReminder({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        leadId: conversation.leadId,
+        reminderType: 'BOOK_DISCOVERY_CALL',
+        scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+        actorId: params.actorId
+      });
+
+      return exitFlow({ skipped: false, outcome: 'pricing_qualified_and_calendly_offered' });
+    }
+
+    await transitionConversationState({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'HUMAN',
+      reason: 'pricing_intent_without_calendly',
+      aiState: 'HUMAN_ACTIVE',
+      humanTakeoverAt: now,
+      status: 'PENDING',
+      patch: {
+        handoffReason: 'pricing_intent_without_calendly',
+        flowOutcome: 'awaiting_human_followup'
+      }
+    });
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: buildHumanHandoffMessage(language, null),
+      metadata: {
+        source: 'consultant',
+        autoReply: true,
+        language,
+        handoffReason: 'pricing_intent_without_calendly'
+      }
+    });
+
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_HUMAN_HANDOFF",
+      message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        handoffReason: 'pricing_intent_without_calendly'
+      }
+    });
+
+    return exitFlow({ skipped: false, outcome: 'pricing_handoff_notified' });
+  }
+
+  if (meetingIntent && calendlyBookingUrl) {
+    await transitionConversationState({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'BOOK_DISCOVERY_CALL',
+      reason: 'meeting_intent_detected',
       patch: {
         flowStep: 'BOOK_DISCOVERY_CALL',
         lastBotInteraction: now.toISOString(),
@@ -708,25 +1066,62 @@ async function handleConsultantConversation(params: {
       metadata: { source: 'consultant', autoReply: true, language, calendlyBookingUrl }
     });
 
-    return { skipped: false };
-  }
-
-  if (wantsHuman) {
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        aiState: 'HUMAN_ACTIVE',
-        humanTakeoverAt: now,
-        metadata: toJsonValue({
-          ...(conversation.metadata ? toJsonObject(conversation.metadata) : {}),
-          flowStep: 'HUMAN',
-          lastBotInteraction: now.toISOString(),
-          handoffReason: 'pricing_or_meeting_or_complex'
-        })
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_CALENDLY_OFFERED",
+      message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        flowStep: 'BOOK_DISCOVERY_CALL',
+        calendlyBookingUrl
       }
     });
 
-    return { skipped: true, reason: 'Human takeover requested' };
+    return exitFlow({ skipped: false, outcome: 'calendly_offered' });
+  }
+
+  if (wantsHuman) {
+    await transitionConversationState({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'HUMAN',
+      reason: 'pricing_or_meeting_or_complex',
+      aiState: 'HUMAN_ACTIVE',
+      humanTakeoverAt: now,
+      status: 'PENDING',
+      patch: {
+        handoffReason: 'pricing_or_meeting_or_complex'
+      }
+    });
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: buildHumanHandoffMessage(language, calendlyBookingUrl),
+      metadata: {
+        source: 'consultant',
+        autoReply: true,
+        language,
+        handoffReason: 'pricing_or_meeting_or_complex',
+        calendlyBookingUrl
+      }
+    });
+
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_HUMAN_HANDOFF",
+      message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        handoffReason: 'pricing_or_meeting_or_complex',
+        calendlyBookingUrl
+      }
+    });
+
+    return exitFlow({ skipped: false, reason: 'Human takeover requested', outcome: 'human_handoff_notified' });
   }
 
   const recentMessages = conversation.messages
@@ -736,10 +1131,13 @@ async function handleConsultantConversation(params: {
 
   if (meta.flowStep === 'LANGUAGE_SELECTION') {
     flowStep = 'DISCOVERY';
-    await setConversationMetadata({
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { language: 'ENGLISH', flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+      actorId: params.actorId,
+      toState: 'DISCOVERY',
+      reason: 'language_defaulted_to_english',
+      patch: { language: 'ENGLISH' }
     });
   }
 
@@ -747,10 +1145,13 @@ async function handleConsultantConversation(params: {
     const hour = now.getHours();
     const greeting = hour < 12 ? 'Good Morning' : hour < 16 ? 'Good Afternoon' : 'Good Evening';
 
-    await setConversationMetadata({
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { language: 'ENGLISH', flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+      actorId: params.actorId,
+      toState: 'DISCOVERY',
+      reason: 'initial_greeting',
+      patch: { language: 'ENGLISH' }
     });
 
     await sendWhatsAppTextMessage({
@@ -769,7 +1170,7 @@ async function handleConsultantConversation(params: {
       actorId: params.actorId
     });
 
-    return { skipped: false };
+    return exitFlow({ skipped: false, outcome: 'greeting_sent' });
   }
 
   if (flowStep === 'DISCOVERY') {
@@ -859,19 +1260,24 @@ async function handleConsultantConversation(params: {
         actorId: params.actorId
       });
 
-      await setConversationMetadata({
+      await transitionConversationState({
         organizationId: params.organizationId,
         conversationId: conversation.id,
-        patch: { flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+        actorId: params.actorId,
+        toState: 'DISCOVERY',
+        reason: 'service_selection_prompt_sent'
       });
 
-      return { skipped: false };
+      return exitFlow({ skipped: false, outcome: 'service_selection_prompted' });
     }
 
-    await setConversationMetadata({
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { selectedService: nextService, flowStep: 'REQUIREMENT_COLLECTION', lastBotInteraction: now.toISOString() }
+      actorId: params.actorId,
+      toState: 'REQUIREMENT_COLLECTION',
+      reason: 'service_selected',
+      patch: { selectedService: nextService }
     });
 
     const askIntro =
@@ -895,7 +1301,7 @@ async function handleConsultantConversation(params: {
       actorId: params.actorId
     });
 
-    return { skipped: false };
+    return exitFlow({ skipped: false, outcome: 'requirement_collection_started' }, { selectedService: nextService });
   }
 
   if (flowStep === 'REQUIREMENT_COLLECTION') {
@@ -928,37 +1334,300 @@ async function handleConsultantConversation(params: {
       normalized.includes('quote');
 
     const confidence = typeof parsed.confidence === 'number' ? (parsed.confidence as number) : 0.3;
+    const businessType = typeof parsed.businessType === 'string' ? parsed.businessType.trim() : '';
+    const problemList = Array.isArray(parsed.currentProblems)
+      ? (parsed.currentProblems as unknown[]).filter((value) => typeof value === 'string').map((value) => String(value).trim()).filter(Boolean)
+      : [];
+    const featureList = Array.isArray(parsed.featuresRequired)
+      ? (parsed.featuresRequired as unknown[]).filter((value) => typeof value === 'string').map((value) => String(value).trim()).filter(Boolean)
+      : [];
+    const outcome = typeof parsed.expectedOutcome === 'string' ? parsed.expectedOutcome.trim() : '';
+    const timeline = typeof parsed.timeline === 'string' ? parsed.timeline.trim() : '';
+    const requirementsAreDetailed =
+      params.inboundBody.trim().length >= 40 &&
+      Boolean(selectedService || businessType) &&
+      (problemList.length > 0 || featureList.length > 0 || Boolean(outcome));
 
     if (pricingOrMeeting || confidence < 0.25) {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
+      await transitionConversationState({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        actorId: params.actorId,
+        toState: 'HUMAN',
+        reason: 'pricing_or_low_confidence',
+        aiState: 'HUMAN_ACTIVE',
+        humanTakeoverAt: now,
+        status: 'PENDING',
+        patch: {
+          handoffReason: 'pricing_or_low_confidence'
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: buildHumanHandoffMessage(language, calendlyBookingUrl),
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          handoffReason: 'pricing_or_low_confidence',
+          calendlyBookingUrl
+        }
+      });
+
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_HUMAN_HANDOFF",
+        message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          handoffReason: 'pricing_or_low_confidence',
+          confidence
+        }
+      });
+
+      return exitFlow({ skipped: false, reason: 'Human takeover requested', outcome: 'human_handoff_notified' }, { confidence });
+    }
+
+    await prisma.executionLog.create({
+      data: {
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_REQUIREMENT_CAPTURED",
+        level: "INFO",
+        message: `[REQUIREMENT_CAPTURED] conversationId=${conversation.id} confidence=${confidence}`,
+        payload: toJsonValue({
+          conversationId: conversation.id,
+          selectedService,
+          businessType,
+          currentProblems: problemList,
+          expectedOutcome: outcome || null,
+          featuresRequired: featureList,
+          timeline: timeline || null,
+          confidence
+        })
+      }
+    });
+
+    if (conversation.leadId || lead?.id) {
+      await prisma.lead.update({
+        where: { id: conversation.leadId || lead?.id || "" },
         data: {
-          aiState: 'HUMAN_ACTIVE',
-          humanTakeoverAt: now,
-          metadata: toJsonValue({
-            ...(conversation.metadata ? toJsonObject(conversation.metadata) : {}),
-            flowStep: 'HUMAN',
-            lastBotInteraction: now.toISOString(),
-            handoffReason: 'pricing_or_low_confidence'
+          serviceType: selectedService || lead?.serviceType || undefined,
+          category: businessType || lead?.category || undefined,
+          lastActivityAt: now,
+          enrichment: toJsonValue({
+            ...toJsonObject(lead?.enrichment),
+            requirementExtraction: {
+              selectedService,
+              businessType: businessType || null,
+              currentProblems: problemList,
+              expectedOutcome: outcome || null,
+              featuresRequired: featureList,
+              timeline: timeline || null,
+              confidence
+            }
           })
         }
       });
-      return { skipped: true, reason: 'Human takeover requested' };
     }
 
-    const problems = Array.isArray(parsed.currentProblems)
-      ? (parsed.currentProblems as unknown[]).filter((value) => typeof value === 'string').join(', ')
-      : null;
-    const outcome = typeof parsed.expectedOutcome === 'string' ? (parsed.expectedOutcome as string) : null;
+    const qualification = await qualifyLeadWithBrain({
+      organizationId: params.organizationId,
+      userId: params.actorId || conversation.assignedToId || null,
+      lead: {
+        id: lead?.id || conversation.leadId || conversation.id,
+        companyName: businessType || lead?.companyName || null,
+        fullName: lead?.fullName || null,
+        email: lead?.email || null,
+        phone: lead?.phone || null,
+        website: lead?.website || null,
+        category: lead?.category || null,
+        sourceLabel: lead?.sourceLabel || null,
+        notes: lead?.notes || null,
+        status: lead?.status || null,
+        score: lead?.score || null,
+        enrichment: lead?.enrichment || null,
+        aiSummary: lead?.aiSummary || null
+      },
+      conversationContext: JSON.stringify({
+        selectedService,
+        businessType,
+        currentProblems: problemList,
+        expectedOutcome: outcome || null,
+        featuresRequired: featureList,
+        timeline: timeline || null
+      })
+    });
+    const parsedQualification = (qualification.parsed || {}) as Record<string, unknown>;
+    const nextScore = typeof parsedQualification.score === 'number' ? parsedQualification.score : lead?.score || null;
+
+    if (conversation.leadId || lead?.id) {
+      await prisma.lead.update({
+        where: { id: conversation.leadId || lead?.id || "" },
+        data: {
+          score: nextScore,
+          intent: typeof parsedQualification.intent === 'string' ? parsedQualification.intent : undefined,
+          industry: typeof parsedQualification.industry === 'string' ? parsedQualification.industry : undefined,
+          recommendedService:
+            typeof parsedQualification.recommendedService === 'string'
+              ? parsedQualification.recommendedService
+              : selectedService || undefined,
+          qualificationNotes:
+            typeof parsedQualification.qualificationNotes === 'string'
+              ? parsedQualification.qualificationNotes
+              : undefined,
+          nextBestAction:
+            typeof parsedQualification.nextBestAction === 'string'
+              ? parsedQualification.nextBestAction
+              : undefined,
+          aiQualifiedAt: now,
+          status: typeof nextScore === 'number' && nextScore >= 70 && lead?.status === 'NEW' ? 'QUALIFIED' : undefined,
+          enrichment: toJsonValue({
+            ...toJsonObject(lead?.enrichment),
+            requirementExtraction: {
+              selectedService,
+              businessType: businessType || null,
+              currentProblems: problemList,
+              expectedOutcome: outcome || null,
+              featuresRequired: featureList,
+              timeline: timeline || null,
+              confidence
+            },
+            aiQualification: parsedQualification
+          })
+        }
+      });
+    }
+
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_QUALIFIED",
+      message: `[QUALIFIED] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        score: nextScore,
+        recommendedService:
+          typeof parsedQualification.recommendedService === 'string'
+            ? parsedQualification.recommendedService
+            : selectedService || null
+      }
+    });
+
+    if (requirementsAreDetailed) {
+      const summaryParts = [
+        businessType ? `Business: ${businessType}.` : null,
+        problemList.length > 0 ? `Challenges: ${problemList.join(", ")}.` : null,
+        outcome ? `Goal: ${outcome}.` : null,
+        featureList.length > 0 ? `Suggested scope: ${featureList.join(", ")}.` : null,
+        timeline ? `Timeline noted: ${timeline}.` : null
+      ].filter(Boolean);
+      const recommendedService =
+        typeof parsedQualification.recommendedService === 'string'
+          ? parsedQualification.recommendedService
+          : selectedService || 'a custom Revanta AI solution';
+      const summaryText =
+        language === 'TELUGU'
+          ? `మీ వివరాలకు ధన్యవాదాలు.\n\n${summaryParts.join("\n")}\n\nమా సిఫార్సు: ${recommendedService}.`
+          : `Thanks for sharing the details.\n\n${summaryParts.join("\n")}\n\nRecommended next step: ${recommendedService}.`;
+
+      await transitionConversationState({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        actorId: params.actorId,
+        toState: calendlyBookingUrl ? 'BOOK_DISCOVERY_CALL' : 'QUALIFICATION_COMPLETE',
+        reason: 'requirements_qualified',
+        status: calendlyBookingUrl ? 'OPEN' : 'PENDING',
+        patch: {
+          calendlyBookingUrl,
+          requirementExtractionComplete: true,
+          flowOutcome: calendlyBookingUrl ? 'awaiting_booking' : 'awaiting_human_followup'
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: summaryText,
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          selectedService,
+          businessType,
+          confidence
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: calendlyBookingUrl
+          ? buildCalendlyDiscoveryCallMessage(calendlyBookingUrl) ||
+            buildHumanHandoffMessage(language, calendlyBookingUrl)
+          : buildHumanHandoffMessage(language, null),
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          calendlyBookingUrl
+        }
+      });
+
+      if (calendlyBookingUrl) {
+        await writeConversationLog({
+          organizationId: params.organizationId,
+          actorId: params.actorId || null,
+          eventType: "WHATSAPP_CALENDLY_OFFERED",
+          message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+          payload: {
+            conversationId: conversation.id,
+            calendlyBookingUrl
+          }
+        });
+        await scheduleConversationReminder({
+          organizationId: params.organizationId,
+          conversationId: conversation.id,
+          leadId: conversation.leadId,
+          reminderType: 'BOOK_DISCOVERY_CALL',
+          scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+          actorId: params.actorId
+        });
+      } else {
+        await writeConversationLog({
+          organizationId: params.organizationId,
+          actorId: params.actorId || null,
+          eventType: "WHATSAPP_HUMAN_HANDOFF",
+          message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+          payload: {
+            conversationId: conversation.id,
+            handoffReason: 'qualified_no_calendly_config'
+          }
+        });
+      }
+
+      return exitFlow({
+        skipped: false,
+        outcome: calendlyBookingUrl ? 'qualified_and_calendly_offered' : 'qualified_and_human_followup_notified'
+      });
+    }
+
+    const problems = problemList.length > 0 ? problemList.join(', ') : null;
+    const normalizedOutcome = outcome || null;
 
     const consultantText = language === 'TELUGU'
-      ? '?? ????????? ?????, ?? ?????? ???????: ' + (problems || '(????????? ??????? ????)') + '.\n???? ????????? ?????: ' + (outcome || '(????????? ??????? ????)') + '.\n\n??????? ???? ????????? ???????/??????????? ????'
-      : 'Based on what you shared, your current pain points: ' + (problems || '(not fully specified)') + '.\nExpected outcome: ' + (outcome || '(not fully specified)') + '.\n\nWhat features do you need?';
+      ? '?? ????????? ?????, ?? ?????? ???????: ' + (problems || '(????????? ??????? ????)') + '.\n???? ????????? ?????: ' + (normalizedOutcome || '(????????? ??????? ????)') + '.\n\n??????? ???? ????????? ???????/??????????? ????'
+      : 'Based on what you shared, your current pain points: ' + (problems || '(not fully specified)') + '.\nExpected outcome: ' + (normalizedOutcome || '(not fully specified)') + '.\n\nWhat features do you need?';
 
-    await setConversationMetadata({
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { flowStep: 'CONSULTATION', lastBotInteraction: now.toISOString() }
+      actorId: params.actorId,
+      toState: 'CONSULTATION',
+      reason: 'need_more_requirement_detail'
     });
 
     await sendWhatsAppTextMessage({
@@ -986,19 +1655,25 @@ async function handleConsultantConversation(params: {
       actorId: params.actorId
     });
 
-    return { skipped: false };
+    return exitFlow({ skipped: false, outcome: 'consultation_follow_up_requested' });
   }
 
   if (flowStep === 'CONSULTATION') {
-    await setConversationMetadata({
+    await transitionConversationState({
       organizationId: params.organizationId,
       conversationId: conversation.id,
-      patch: { lastBotInteraction: now.toISOString() }
+      actorId: params.actorId,
+      toState: calendlyBookingUrl ? 'BOOK_DISCOVERY_CALL' : 'QUALIFICATION_COMPLETE',
+      reason: 'consultation_details_received',
+      status: calendlyBookingUrl ? 'OPEN' : 'PENDING',
+      patch: {
+        flowOutcome: calendlyBookingUrl ? 'awaiting_booking' : 'awaiting_human_followup'
+      }
     });
 
     const follow = language === 'TELUGU'
-      ? '???????. ?????? ????, ?? timeline ????? ???? ????????? ????? features ??????????.'
-      : 'Great. Next, share your timeline and the key features you want.';
+      ? 'ధన్యవాదాలు. మీ అవసరాలు నమోదు చేశాము. తదుపరి దశగా మా టీమ్ మీతో చర్చించేందుకు సిద్ధంగా ఉంది.'
+      : 'Thanks. We have captured your requirements and prepared the next step.';
 
     await sendWhatsAppTextMessage({
       organizationId: params.organizationId,
@@ -1007,22 +1682,158 @@ async function handleConsultantConversation(params: {
       metadata: { source: 'consultant', autoReply: true, language }
     });
 
-    await scheduleConversationReminder({
-      organizationId: params.organizationId,
-      conversationId: conversation.id,
-      leadId: conversation.leadId,
-      reminderType: 'CONSULTATION',
-      scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
-      actorId: params.actorId
-    });
+    if (calendlyBookingUrl) {
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: buildCalendlyDiscoveryCallMessage(calendlyBookingUrl)!,
+        metadata: { source: 'consultant', autoReply: true, language, calendlyBookingUrl }
+      });
 
-    return { skipped: false };
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_CALENDLY_OFFERED",
+        message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          calendlyBookingUrl
+        }
+      });
+
+      await scheduleConversationReminder({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        leadId: conversation.leadId,
+        reminderType: 'BOOK_DISCOVERY_CALL',
+        scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+        actorId: params.actorId
+      });
+    } else {
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: buildHumanHandoffMessage(language, null),
+        metadata: { source: 'consultant', autoReply: true, language, handoffReason: 'consultation_completed' }
+      });
+
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_HUMAN_HANDOFF",
+        message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          handoffReason: 'consultation_completed'
+        }
+      });
+    }
+
+    return exitFlow({
+      skipped: false,
+      outcome: calendlyBookingUrl ? 'consultation_completed_with_calendly' : 'consultation_completed_with_human_followup'
+    });
   }
 
-  await setConversationMetadata({
+  if (flowStep === 'BOOK_DISCOVERY_CALL') {
+    const bookingFollowUp =
+      language === 'TELUGU'
+        ? calendlyBookingUrl
+          ? `ధన్యవాదాలు. మీరు సిద్ధంగా ఉన్నప్పుడు ఈ లింక్‌లో కాల్ బుక్ చేయండి:\n${calendlyBookingUrl}\n\nమీరు ఇప్పటికే బుక్ చేసి ఉంటే ఇక్కడే తెలియజేయండి.`
+          : 'ధన్యవాదాలు. మా టీమ్ మీతో తదుపరి దశ కోసం సంప్రదిస్తుంది.'
+        : calendlyBookingUrl
+          ? `Thanks. When you are ready, book your discovery call here:\n${calendlyBookingUrl}\n\nIf you have already booked, just reply here and our team will continue from there.`
+          : 'Thanks. Our team will continue the next step with you shortly.';
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: bookingFollowUp,
+      metadata: {
+        source: 'consultant',
+        autoReply: true,
+        language,
+        calendlyBookingUrl
+      }
+    });
+
+    if (calendlyBookingUrl) {
+      await writeConversationLog({
+        organizationId: params.organizationId,
+        actorId: params.actorId || null,
+        eventType: "WHATSAPP_CALENDLY_OFFERED",
+        message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+        payload: {
+          conversationId: conversation.id,
+          calendlyBookingUrl,
+          flowStep: 'BOOK_DISCOVERY_CALL'
+        }
+      });
+
+      await scheduleConversationReminder({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        leadId: conversation.leadId,
+        reminderType: 'BOOK_DISCOVERY_CALL',
+        scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+        actorId: params.actorId
+      });
+    }
+
+    return exitFlow({
+      skipped: false,
+      outcome: calendlyBookingUrl ? 'booking_followup_reinforced' : 'awaiting_human_followup'
+    });
+  }
+
+  if (flowStep === 'QUALIFICATION_COMPLETE') {
+    await transitionConversationState({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      actorId: params.actorId,
+      toState: 'HUMAN',
+      reason: 'post_qualification_follow_up',
+      aiState: 'HUMAN_ACTIVE',
+      humanTakeoverAt: now,
+      status: 'PENDING',
+      patch: {
+        handoffReason: 'post_qualification_follow_up',
+        flowOutcome: 'awaiting_human_followup'
+      }
+    });
+
+    await sendWhatsAppTextMessage({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      text: buildHumanHandoffMessage(language, null),
+      metadata: {
+        source: 'consultant',
+        autoReply: true,
+        language,
+        handoffReason: 'post_qualification_follow_up'
+      }
+    });
+
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_HUMAN_HANDOFF",
+      message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+      payload: {
+        conversationId: conversation.id,
+        handoffReason: 'post_qualification_follow_up'
+      }
+    });
+
+    return exitFlow({ skipped: false, outcome: 'post_qualification_handoff_notified' });
+  }
+
+  await transitionConversationState({
     organizationId: params.organizationId,
     conversationId: conversation.id,
-    patch: { flowStep: 'DISCOVERY', lastBotInteraction: now.toISOString() }
+    actorId: params.actorId,
+    toState: 'DISCOVERY',
+    reason: 'fallback_to_discovery'
   });
 
   return handleConsultantConversation({
@@ -1244,12 +2055,28 @@ export async function processIncomingWhatsAppMessage(params: {
     actorId: assignedToId
   });
 
-  const autoReply = await sendAutomaticWhatsAppReply({
-    organizationId: params.organizationId,
-    conversationId: conversation.id,
-    inboundBody: params.body,
-    actorId: assignedToId
-  });
+  let autoReply: Awaited<ReturnType<typeof sendAutomaticWhatsAppReply>>;
+  try {
+    autoReply = await sendAutomaticWhatsAppReply({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      inboundBody: params.body,
+      actorId: assignedToId
+    });
+  } catch (error: any) {
+    await logWhatsAppAutomationError({
+      organizationId: params.organizationId,
+      conversationId: conversation.id,
+      leadId: lead.id,
+      actorId: assignedToId,
+      message: "Automatic WhatsApp reply failed.",
+      details: {
+        inboundBody: params.body,
+        error: error?.message || String(error)
+      }
+    });
+    throw error;
+  }
 
   return { lead, contact, conversation, message, autoReply };
 }
