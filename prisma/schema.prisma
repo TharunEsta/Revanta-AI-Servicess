@@ -252,6 +252,7 @@ model Organization {
   invitations        Invitation[]
   roles              Role[]
   leads              Lead[]
+  conversationReminders ConversationReminder[]
   contacts           Contact[]
   companies          Company[]
   deals              Deal[]
@@ -534,16 +535,17 @@ model Lead {
   company        Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
   contact        Contact?     @relation("LeadContact")
   owner          User?        @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-    deals          Deal[]
-    proposals      Proposal[]
-    contracts      Contract[]
-    conversations  Conversation[]
-    activities     Activity[]
-    tasks          Task[]
-    messages       Message[]
-    projects       Project[]
-    supportTickets SupportTicket[]
-    attachments    Attachment[]
+  deals          Deal[]
+  proposals      Proposal[]
+  contracts      Contract[]
+  conversations  Conversation[]
+  activities     Activity[]
+  tasks          Task[]
+  messages       Message[]
+  projects       Project[]
+  supportTickets SupportTicket[]
+  attachments    Attachment[]
+  conversationReminders ConversationReminder[]
 
   @@index([organizationId, status])
   @@index([organizationId, ownerId])
@@ -551,6 +553,7 @@ model Lead {
   @@index([organizationId, phone])
   @@index([organizationId, companyName])
 }
+
 
 model Deal {
   id             String       @id @default(cuid())
@@ -606,14 +609,16 @@ model Conversation {
   company        Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
   contact        Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
   project        Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
-    assignedTo     User?              @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-    messages       Message[]
-    attachments    Attachment[]
-    supportTickets SupportTicket[]
+  assignedTo     User?              @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages       Message[]
+  attachments    Attachment[]
+  supportTickets SupportTicket[]
+  conversationReminders ConversationReminder[]
 
   @@index([organizationId, status])
   @@index([organizationId, channel])
 }
+
 
 model Message {
   id             String           @id @default(cuid())
@@ -1532,3 +1537,4 @@ model ConversationReminder {
   // Prevent duplicate pending reminders per conversation + type
   @@unique([conversationId, reminderType], map: "ConversationReminder_pending_unique_idx")
 }
+
