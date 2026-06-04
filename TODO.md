@@ -1,20 +1,10 @@
-# TODO
+# TODO - Fix conversation state gating
 
-## Inactivity reminders (DB-backed)
-- [ ] Add Prisma model(s) for conversation inactivity reminders.
-- [ ] Add scheduling logic to create reminder records when bot enters a waiting-for-user state (e.g., after sending REQ/CONSULTATION questions).
-- [ ] Add cancellation logic to mark/void reminders on inbound user messages.
-- [ ] Add worker endpoint/cron route to process due reminders.
-- [ ] Add logs:
-  - [ ] [REMINDER_SCHEDULED]
-  - [ ] [REMINDER_CANCELLED]
-  - [ ] [REMINDER_SENT]
-- [ ] Ensure reminders survive restarts (no in-memory timers).
-- [ ] Prevent duplicate reminders.
-
-## Verification
-- [ ] Simulate waiting scenario and confirm reminders are created and sent at +5 min.
-- [ ] Simulate inbound reply and confirm reminders are cancelled immediately.
-- [ ] Run build and fix any compilation / Prisma issues.
-
+- [ ] Inspect current WhatsApp flow state machine and identify where it auto-advances within a single inbound webhook.
+- [ ] Implement gating: when a state asks a question, persist `nextExpectedState`, set `waitingForUserReply=true`, log `[WAITING_FOR_USER_REPLY]`, and return immediately.
+- [ ] Prevent any further state transitions/auto-advances unless a new inbound WhatsApp message is received.
+- [ ] Add/adjust logs for: `[WAITING_FOR_USER_REPLY]`, `[USER_REPLY_RECEIVED]`, `[STATE_ADVANCE]`.
+- [ ] Ensure REQ_COLLECTION and CONSULTATION only send one question per inbound message and do not immediately send Qualification summary/Calendly.
+- [ ] Verify QUALIFICATION_COMPLETE and BOOK_DISCOVERY_CALL transitions occur only when qualification is complete.
+- [ ] Run build/lint and (if available) a local test harness for conversation flow.
 

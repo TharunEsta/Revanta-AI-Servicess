@@ -1,0 +1,99 @@
+if (requirementsAreDetailed) {
+      const summaryParts = [
+        businessType ? `Business: ${businessType}.` : null,
+        problemList.length > 0 ? `Challenges: ${problemList.join(", ")}.` : null,
+        outcome ? `Goal: ${outcome}.` : null,
+        featureList.length > 0 ? `Suggested scope: ${featureList.join(", ")}.` : null,
+        timeline ? `Timeline noted: ${timeline}.` : null
+      ].filter(Boolean);
+      const recommendedService =
+        typeof parsedQualification.recommendedService === 'string'
+          ? parsedQualification.recommendedService
+          : selectedService || 'a custom Revanta AI solution';
+      const summaryText =
+        language === 'TELUGU'
+          ? `మీ వివరాలకు ధన్యవాదాలు.\n\n${summaryParts.join("\n")}\n\nమా సిఫార్సు: ${recommendedService}.`
+          : `Thanks for sharing the details.\n\n${summaryParts.join("\n")}\n\nRecommended next step: ${recommendedService}.`;
+
+      await transitionConversationState({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        actorId: params.actorId,
+        toState: calendlyBookingUrl ? 'BOOK_DISCOVERY_CALL' : 'QUALIFICATION_COMPLETE',
+        reason: 'requirements_qualified',
+        status: calendlyBookingUrl ? 'OPEN' : 'PENDING',
+        patch: {
+          calendlyBookingUrl,
+          requirementExtractionComplete: true,
+          flowOutcome: calendlyBookingUrl ? 'awaiting_booking' : 'awaiting_human_followup'
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: summaryText,
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          selectedService,
+          businessType,
+          confidence
+        }
+      });
+
+      await sendWhatsAppTextMessage({
+        organizationId: params.organizationId,
+        conversationId: conversation.id,
+        text: calendlyBookingUrl
+          ? buildCalendlyDiscoveryCallMessage(calendlyBookingUrl) ||
+            buildHumanHandoffMessage(language, calendlyBookingUrl)
+          : buildHumanHandoffMessage(language, null),
+        metadata: {
+          source: 'consultant',
+          autoReply: true,
+          language,
+          calendlyBookingUrl
+        }
+      });
+
+      if (calendlyBookingUrl) {
+        await writeConversationLog({
+          organizationId: params.organizationId,
+          actorId: params.actorId || null,
+          eventType: "WHATSAPP_CALENDLY_OFFERED",
+          message: `[CALENDLY_OFFERED] conversationId=${conversation.id}`,
+          payload: {
+            conversationId: conversation.id,
+            calendlyBookingUrl
+          }
+        });
+        await scheduleConversationReminder({
+          organizationId: params.organizationId,
+          conversationId: conversation.id,
+          leadId: conversation.leadId,
+          reminderType: 'BOOK_DISCOVERY_CALL',
+          scheduledFor: new Date(now.getTime() + REMINDER_DELAY_MINUTES * 60 * 1000),
+          actorId: params.actorId
+        });
+      } else {
+        await writeConversationLog({
+          organizationId: params.organizationId,
+          actorId: params.actorId || null,
+          eventType: "WHATSAPP_HUMAN_HANDOFF",
+          message: `[HUMAN_HANDOFF] conversationId=${conversation.id}`,
+          payload: {
+            conversationId: conversation.id,
+            handoffReason: 'qualified_no_calendly_config'
+          }
+        });
+      }
+
+      return exitFlow({
+        skipped: false,
+        outcome: calendlyBookingUrl ? 'qualified_and_calendly_offered' : 'qualified_and_human_followup_notified'
+      });
+    }
+
+    
