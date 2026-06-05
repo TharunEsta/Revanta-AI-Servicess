@@ -9,7 +9,15 @@ export async function GET(request: NextRequest, context: any) {
   const { id } = await context.params;
   const record = await prisma.conversation.findFirst({
     where: { id, organizationId: session.orgId },
-    include: { lead: true, company: true, contact: true, messages: { orderBy: { createdAt: "desc" } } }
+    include: {
+      lead: true,
+      company: true,
+      contact: true,
+      messages: {
+        orderBy: { createdAt: "asc" },
+        include: { attachments: true }
+      }
+    }
   });
   if (!record) return jsonError("Not found", 404);
   return jsonOk(record);

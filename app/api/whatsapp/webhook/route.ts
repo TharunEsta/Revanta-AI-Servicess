@@ -6,6 +6,42 @@ import {
   resolveOrganizationFromPhoneNumberId
 } from "@/lib/revanta-os/whatsapp";
 
+async function resolveMetaMediaUrl(mediaId: string | null) {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!mediaId || !accessToken) return null;
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!response.ok) return null;
+    const json = await response.json().catch(() => null);
+    return typeof json?.url === "string" ? json.url : null;
+  } catch {
+    return null;
+  }
+}
+
+async function extractInboundMedia(message: any) {
+  const mediaType = ["image", "document", "video", "audio"].find((type) => Boolean(message?.[type]));
+  if (!mediaType) return null;
+
+  const media = message[mediaType] || {};
+  const mediaId = typeof media.id === "string" ? media.id : null;
+  return {
+    mediaId,
+    mediaUrl: await resolveMetaMediaUrl(mediaId),
+    mediaType,
+    mimeType: typeof media.mime_type === "string" ? media.mime_type : null,
+    fileName:
+      typeof media.filename === "string"
+        ? media.filename
+        : typeof media.caption === "string"
+          ? media.caption
+          : null
+  };
+}
+
 export async function GET(request: NextRequest) {
   const mode = request.nextUrl.searchParams.get("hub.mode");
   const verifyToken = request.nextUrl.searchParams.get("hub.verify_token");
@@ -108,15 +144,24 @@ export async function POST(request: NextRequest) {
                   : typeof interactiveButtonTitle === "string"
                     ? interactiveButtonTitle
                     : null;
+          const inboundMedia = await extractInboundMedia(message);
 
           await processIncomingWhatsAppMessage({
             organizationId,
             from,
-            body: interactiveSelection || message.text?.body || message.caption || "[non-text message]",
+            body:
+              interactiveSelection ||
+              message.text?.body ||
+              message.caption ||
+              message.image?.caption ||
+              message.video?.caption ||
+              message.document?.caption ||
+              (inboundMedia ? `[${inboundMedia.mediaType}] ${inboundMedia.fileName || "media"}` : "[non-text message]"),
             messageId: message.id,
             name: contactName,
             phoneNumberId,
-            waId: value.contacts?.[0]?.wa_id || from
+            waId: value.contacts?.[0]?.wa_id || from,
+            media: inboundMedia
           });
         } catch (error) {
           console.error("[WA_PROCESS_ERROR]", error);
