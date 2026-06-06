@@ -76,30 +76,42 @@ export function ConversationHumanComposer({
     setUploadError(null);
     const trimmed = text.trim();
 
-    if (!trimmed && !file) {
+    const hasText = trimmed.length > 0;
+    const hasFile = Boolean(file);
+
+    if (!hasText && !hasFile) {
       setUploadError("Type a message or choose a file.");
       return;
     }
 
     setSending(true);
     try {
-      const formData = new FormData();
-      formData.append("conversationId", conversationId);
-      if (trimmed) formData.append("text", trimmed);
+      // Transport selection (must match backend):
+      // - Text only => JSON payload (conversationId + text)
+      // - File only or Text+File => multipart/form-data (conversationId + (optional) text + file)
+      let res: Response;
 
-      // Backend requires `file` even for text-only sends (see app/api/whatsapp/send/route.ts).
-      // If no file was selected, send a tiny text/plain placeholder.
-      if (file) {
-        formData.append("file", file);
+      if (hasText && !hasFile) {
+        res = await fetch("/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId,
+            text: trimmed
+          })
+        });
       } else {
-        const placeholder = new File([""], "placeholder.txt", { type: "text/plain" });
-        formData.append("file", placeholder);
-      }
+        const formData = new FormData();
+        formData.append("conversationId", conversationId);
+        if (hasText) formData.append("text", trimmed);
+        // In this branch we always have a file.
+        if (file) formData.append("file", file);
 
-      const res = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        body: formData
-      });
+        res = await fetch("/api/whatsapp/send", {
+          method: "POST",
+          body: formData
+        });
+      }
 
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
@@ -114,8 +126,6 @@ export function ConversationHumanComposer({
       requestAnimationFrame(() => {
         textareaRef.current?.focus();
       });
-
-
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Send failed.");
     } finally {
