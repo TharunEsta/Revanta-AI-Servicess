@@ -138,13 +138,7 @@ export default async function ConversationsPage() {
             </div>
 
             {conversation.aiState === "HUMAN_ACTIVE" ? (
-              <ConversationHumanComposer
-                conversationId={conversation.id}
-                onAfterSend={() => {
-                  // Conversation refresh happens via router refresh inside the composer.
-                  // Kept intentionally empty here.
-                }}
-              />
+              <ConversationHumanComposer conversationId={conversation.id} />
             ) : null}
 
           </Card>
