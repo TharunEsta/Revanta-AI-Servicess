@@ -25,11 +25,9 @@ function formatBytes(bytes: number) {
 }
 
 export function ConversationHumanComposer({
-  conversationId,
-  onAfterSend
+  conversationId
 }: {
   conversationId: string;
-  onAfterSend?: () => void;
 }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -88,7 +86,15 @@ export function ConversationHumanComposer({
       const formData = new FormData();
       formData.append("conversationId", conversationId);
       if (trimmed) formData.append("text", trimmed);
-      if (file) formData.append("file", file);
+
+      // Backend requires `file` even for text-only sends (see app/api/whatsapp/send/route.ts).
+      // If no file was selected, send a tiny text/plain placeholder.
+      if (file) {
+        formData.append("file", file);
+      } else {
+        const placeholder = new File([""], "placeholder.txt", { type: "text/plain" });
+        formData.append("file", placeholder);
+      }
 
       const res = await fetch("/api/whatsapp/send", {
         method: "POST",
@@ -103,19 +109,13 @@ export function ConversationHumanComposer({
       // Success: clear + refresh
       setText("");
       clearAttachment();
-      onAfterSend?.();
 
       // Keep scroll at latest message.
       requestAnimationFrame(() => {
         textareaRef.current?.focus();
       });
 
-      // Hard refresh this server component list (no new API/routes)
-      try {
-        window.location.reload();
-      } catch {
-        // ignore
-      }
+
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Send failed.");
     } finally {
