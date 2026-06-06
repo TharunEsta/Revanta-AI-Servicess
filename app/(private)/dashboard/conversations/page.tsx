@@ -2,8 +2,10 @@ import { prisma } from "@/lib/revanta-os/db";
 import { getSessionUser } from "@/lib/revanta-os/auth";
 import { Card } from "@/components/ui";
 import { ConversationStateToggle } from "@/components/conversation-state-toggle";
+import { ConversationHumanComposer } from "@/components/conversation-human-composer";
 
 export default async function ConversationsPage() {
+
   const session = await getSessionUser();
   if (!session?.orgId) return null;
 
@@ -63,6 +65,7 @@ export default async function ConversationsPage() {
             </div>
             <div className="mt-4 space-y-2">
               {(() => {
+
                 const now = new Date();
                 const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const yesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
@@ -133,6 +136,17 @@ export default async function ConversationsPage() {
                 });
               })()}
             </div>
+
+            {conversation.aiState === "HUMAN_ACTIVE" ? (
+              <ConversationHumanComposer
+                conversationId={conversation.id}
+                onAfterSend={() => {
+                  // Conversation refresh happens via router refresh inside the composer.
+                  // Kept intentionally empty here.
+                }}
+              />
+            ) : null}
+
           </Card>
         ))}
       </div>

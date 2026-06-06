@@ -1213,6 +1213,7 @@ async function runReplacementConversationEngine(params: {
   inboundBody: string;
   actorId?: string | null;
 }) {
+  const _tEngineStart = Date.now();
   console.log("[ENGINE_START]");
   const conversation = await prisma.conversation.findFirst({
     where: { id: params.conversation.id, organizationId: params.organizationId },
@@ -1462,6 +1463,7 @@ async function runReplacementConversationEngine(params: {
   metadata.lastQuestionAsked = null;
   metadata.lastBotInteraction = now;
   console.log("[ENGINE_END]");
+  console.log("[TIMER_END]", { engineMs: Date.now() - _tEngineStart });
   return finishConversationTurn({
     organizationId: params.organizationId,
     conversationId: conversation.id,
@@ -1555,6 +1557,13 @@ export async function processIncomingWhatsAppMessage(params: {
       }
     });
   }
+
+  const _tProcessStart = Date.now();
+  console.log("[TIMER_START] processIncomingWhatsAppMessage", {
+    conversationId: conversation.id,
+    flowStep: conversation.metadata?.flowStep,
+    aiState: conversation.aiState
+  });
 
   console.log("[BEFORE_ENGINE]", {
     conversationId: conversation.id,
