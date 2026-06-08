@@ -114,9 +114,7 @@ export async function POST(request: NextRequest) {
           ? `Conversation context:\n${conversation.messages
               .slice()
               .reverse()
-              .map((message: ConversationMessage) =>
-                `${message.direction}: ${message.body}`
-              )
+              .map((message: any) => `${message.direction}: ${message.body}`)
               .join("\n")}`
           : "",
         lead
