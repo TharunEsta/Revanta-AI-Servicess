@@ -3,22 +3,38 @@ import { getPrisma } from "@/lib/revanta-os/db";
 import { getSessionFromRequest } from "@/lib/revanta-os/auth";
 import { jsonError, jsonOk, safeJson } from "@/lib/revanta-os/http";
 import { runAIPrompt } from "@/lib/revanta-os/ai";
-import { answerBusinessQuestion, generateInvoiceFromProject, generateProposalFromLead, getExecutiveMetrics } from "@/lib/revanta-os/business";
+import {
+  answerBusinessQuestion,
+  generateInvoiceFromProject,
+  generateProposalFromLead,
+  getExecutiveMetrics
+} from "@/lib/revanta-os/business";
 import { getRequestFingerprint, isRateLimited } from "@/lib/revanta-os/security";
+
+type ConversationMessage = {
+  direction: string;
+  body: string;
+};
 
 export async function POST(request: NextRequest) {
   const prisma = getPrisma();
   const session = await getSessionFromRequest(request);
   if (!session?.orgId) return jsonError("Unauthorized", 401);
   const body = (await safeJson(request)) as Record<string, unknown>;
+
   const rateKey = `ai-chat:${session.orgId}:${session.userId}:${getRequestFingerprint(request)}`;
   if (isRateLimited(rateKey, 30, 60 * 1000)) {
     return jsonError("AI rate limit exceeded. Please try again shortly.", 429);
   }
+
   const prompt = typeof body.prompt === "string" ? body.prompt : "";
   if (!prompt) return jsonError("Prompt is required.");
+
   const lowerPrompt = prompt.toLowerCase();
-  const promptVersion = typeof body.promptVersion === "string" ? body.promptVersion : request.headers.get("x-prompt-version") || "v1";
+  const promptVersion =
+    typeof body.promptVersion === "string"
+      ? body.promptVersion
+      : request.headers.get("x-prompt-version") || "v1";
 
   if (
     lowerPrompt.includes("how many leads") ||
@@ -63,6 +79,7 @@ export async function POST(request: NextRequest) {
 
   const conversationId = typeof body.conversationId === "string" ? body.conversationId : null;
   const leadId = typeof body.leadId === "string" ? body.leadId : null;
+
   const conversation = conversationId
     ? await prisma.conversation.findFirst({
         where: { id: conversationId, organizationId: session.orgId },
@@ -74,10 +91,15 @@ export async function POST(request: NextRequest) {
         }
       })
     : null;
+
   const lead = !conversation && leadId
     ? await prisma.lead.findFirst({
         where: { id: leadId, organizationId: session.orgId },
-        include: { company: true, contact: true, activities: { orderBy: { createdAt: "desc" }, take: 5 } }
+        include: {
+          company: true,
+          contact: true,
+          activities: { orderBy: { createdAt: "desc" }, take: 5 }
+        }
       })
     : conversation?.lead || null;
 
@@ -92,7 +114,9 @@ export async function POST(request: NextRequest) {
           ? `Conversation context:\n${conversation.messages
               .slice()
               .reverse()
-              .map((message) => `${message.direction}: ${message.body}`)
+              .map((message: ConversationMessage) =>
+                `${message.direction}: ${message.body}`
+              )
               .join("\n")}`
           : "",
         lead
@@ -111,8 +135,7 @@ export async function POST(request: NextRequest) {
         .filter(Boolean)
         .join("\n\n"),
       system:
-        "You are Revanta OS AI Brain. Produce a concise, operationally useful response that reflects the company knowledge and the active record context."
-      ,
+        "You are Revanta OS AI Brain. Produce a concise, operationally useful response that reflects the company knowledge and the active record context.",
       promptVersion
     });
 
@@ -121,3 +144,4 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "AI chat failed", 503);
   }
 }
+
