@@ -1,10 +1,10 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 
 import {
   siGooglecloud,
-  siAmazonwebservices,
   siVercel,
   siCloudflare,
   siSupabase,
@@ -17,12 +17,9 @@ import {
   siReact,
   siTypescript,
   siNodedotjs,
-  siOpenai,
   siAnthropic,
   siPython,
-  siJava,
   siSpring,
-  siCsharp,
   siDotnet,
   siFlutter,
   siMongodb,
@@ -32,7 +29,6 @@ import {
 
 const TECH_ICONS = [
   siGooglecloud,
-  siAmazonwebservices,
   siVercel,
   siCloudflare,
   siSupabase,
@@ -45,12 +41,9 @@ const TECH_ICONS = [
   siReact,
   siTypescript,
   siNodedotjs,
-  siOpenai,
   siAnthropic,
   siPython,
-  siJava,
   siSpring,
-  siCsharp,
   siDotnet,
   siFlutter,
   siMongodb,
@@ -58,7 +51,11 @@ const TECH_ICONS = [
   siRedis
 ].filter(Boolean);
 
-function SimpleIconSvg({ icon }: { icon: { path: string; hex: string } }) {
+function SimpleIconSvg({
+  icon
+}: {
+  icon: { path: string; hex: string };
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -73,13 +70,12 @@ function SimpleIconSvg({ icon }: { icon: { path: string; hex: string } }) {
 }
 
 export function AutoScrollingTechMarquee() {
-  const TRACK_DISTANCE = 1600;
+  const DURATION = 8;
 
+  const trackRef = React.useRef<HTMLDivElement | null>(null);
 
-  console.log("TECH_ICONS", TECH_ICONS.length);
-  console.log("TRACK_DISTANCE", TRACK_DISTANCE);
-
-  console.log("DURATION", 8);
+  const scrollWidth =
+    (trackRef.current?.scrollWidth ?? 0) / 2;
 
 
   return (
@@ -88,9 +84,10 @@ export function AutoScrollingTechMarquee() {
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent" />
 
       <motion.div
+        ref={trackRef}
         className="flex items-center gap-12 whitespace-nowrap"
-        animate={{ x: -1600 }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        animate={{ x: -scrollWidth }}
+        transition={{ duration: DURATION, repeat: Infinity, ease: "linear" }}
       >
         {[...TECH_ICONS, ...TECH_ICONS].map((icon, idx) => (
           <div
