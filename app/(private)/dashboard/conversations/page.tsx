@@ -3,6 +3,8 @@ import { getSessionUser } from "@/lib/revanta-os/auth";
 import { Card } from "@/components/ui";
 import { ConversationStateToggle } from "@/components/conversation-state-toggle";
 import { ConversationHumanComposer } from "@/components/conversation-human-composer";
+import { formatDayGroupInKolkata, formatTimeInKolkata } from "@/lib/revanta-os/time";
+
 
 export default async function ConversationsPage() {
 
@@ -11,13 +13,20 @@ export default async function ConversationsPage() {
 
   const conversations = await prisma.conversation.findMany({
     where: { organizationId: session.orgId },
-    include: {
+      include: {
       lead: true,
       company: true,
       contact: true,
       assignedTo: true,
-      messages: { orderBy: { createdAt: "desc" }, take: 5 }
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: {
+          attachments: true
+        }
+      }
     },
+
     orderBy: { updatedAt: "desc" },
     take: 100
   });
@@ -66,22 +75,9 @@ export default async function ConversationsPage() {
             <div className="mt-4 space-y-2">
               {(() => {
 
-                const now = new Date();
-                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const yesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
-                const formatTime = (d: Date) =>
-                  new Intl.DateTimeFormat("en-IN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true
-                  }).format(d);
+                const formatDayGroup = formatDayGroupInKolkata;
+                const formatTime = (d: Date) => formatTimeInKolkata(d);
 
-                const formatDayGroup = (d: Date) => {
-                  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                  if (t === startOfToday.getTime()) return "Today";
-                  if (t === yesterday.getTime()) return "Yesterday";
-                  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(d);
-                };
 
                 const msgTime = (m: typeof conversation.messages[number]) =>
                   m.readAt || m.deliveredAt || m.sentAt || m.createdAt;
@@ -123,8 +119,102 @@ export default async function ConversationsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-slate-900">{message.direction}</div>
-                            <div className="break-words">{message.body}</div>
+
+                            {message.attachments && message.attachments.length > 0 ? (
+                              <div className="mt-2 space-y-2">
+                                {message.attachments.map((att: any) => {
+                                  const url = att.url || undefined;
+                                  const mime = att.mimeType || att.metadata?.mimeType || "";
+                                  const type = (mime.startsWith("image/") && "image") ||
+                                    (mime.startsWith("video/") && "video") ||
+                                    (mime.startsWith("audio/") && "audio") ||
+                                    (mime ? "document" : "document");
+
+                                  return (
+                                    <div key={att.id} className="space-y-2">
+                                      {type === "image" && url ? (
+                                        <div>
+                                          <button
+                                            type="button"
+                                            className="block w-full overflow-hidden rounded-xl"
+                                            onClick={() => window.open(url, "_blank")}
+                                          >
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={url} alt={att.fileName} className="max-h-72 w-full object-contain" />
+                                          </button>
+                                          <div className="mt-2 flex items-center gap-3">
+                                            <a
+                                              href={url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-xs font-semibold text-sky-700 hover:underline"
+                                            >
+                                              Download
+                                            </a>
+                                          </div>
+                                        </div>
+                                      ) : null}
+
+                                      {type === "video" && url ? (
+                                        <div>
+                                          <video controls className="w-full max-h-72 rounded-xl">
+                                            <source src={url} />
+                                          </video>
+                                          <div className="mt-2 flex items-center gap-3">
+                                            <a
+                                              href={url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-xs font-semibold text-sky-700 hover:underline"
+                                            >
+                                              Download
+                                            </a>
+                                          </div>
+                                        </div>
+                                      ) : null}
+
+                                      {type === "audio" && url ? (
+                                        <div>
+                                          <audio controls className="w-full">
+                                            <source src={url} />
+                                          </audio>
+                                          <div className="mt-2 flex items-center gap-3">
+                                            <a
+                                              href={url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-xs font-semibold text-sky-700 hover:underline"
+                                            >
+                                              Download
+                                            </a>
+                                          </div>
+                                        </div>
+                                      ) : null}
+
+                                      {type === "document" && url ? (
+                                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                          <div className="truncate text-sm font-semibold text-slate-900">{att.fileName}</div>
+                                          <div className="mt-2">
+                                            <a
+                                              href={url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-xs font-semibold text-sky-700 hover:underline"
+                                            >
+                                              Download
+                                            </a>
+                                          </div>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="break-words">{message.body}</div>
+                            )}
                           </div>
+
                           <div className={`shrink-0 text-right text-xs ${message.direction === "OUTBOUND" ? "" : "text-slate-500"}`}>
                             <div className="whitespace-nowrap">{time}</div>
                             {icon ? <div className={`${iconColor} mt-1 font-semibold`}>{icon}</div> : null}
