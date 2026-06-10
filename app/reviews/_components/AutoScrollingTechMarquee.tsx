@@ -2,40 +2,85 @@
 
 import { motion } from "framer-motion";
 
-const TECH = [
-  "OpenAI",
-  "Anthropic",
-  "Google Cloud",
-  "AWS",
-  "Meta",
-  "Vercel",
-  "Cloudflare",
-  "Supabase",
-  "PostgreSQL",
-  "Stripe",
-  "Razorpay",
-  "GitHub",
-  "Docker",
-  "Next.js",
-  "React",
-  "Node.js",
-  "TypeScript"
-];
+import {
+  siGooglecloud,
+  siAmazonwebservices,
+  siVercel,
+  siCloudflare,
+  siSupabase,
+  siPostgresql,
+  siStripe,
+  siRazorpay,
+  siGithub,
+  siDocker,
+  siNextdotjs,
+  siReact,
+  siTypescript,
+  siNodedotjs,
+  siOpenai,
+  siAnthropic,
+  siPython,
+  siJava,
+  siSpring,
+  siCsharp,
+  siDotnet,
+  siFlutter,
+  siMongodb,
+  siMysql,
+  siRedis
+} from "simple-icons";
 
-function Chip({ name }: { name: string }) {
+const TECH_ICONS = [
+  siGooglecloud,
+  siAmazonwebservices,
+  siVercel,
+  siCloudflare,
+  siSupabase,
+  siPostgresql,
+  siStripe,
+  siRazorpay,
+  siGithub,
+  siDocker,
+  siNextdotjs,
+  siReact,
+  siTypescript,
+  siNodedotjs,
+  siOpenai,
+  siAnthropic,
+  siPython,
+  siJava,
+  siSpring,
+  siCsharp,
+  siDotnet,
+  siFlutter,
+  siMongodb,
+  siMysql,
+  siRedis
+].filter(Boolean);
+
+function SimpleIconSvg({ icon }: { icon: { path: string; hex: string } }) {
   return (
-    <div
-      className="group relative flex select-none items-center justify-center whitespace-nowrap rounded-full border border-slate-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-600 shadow-[0_10px_30px_rgba(17,17,17,0.04)] backdrop-blur transition hover:border-slate-300 hover:bg-white"
-      aria-label={name}
+    <svg
+      viewBox="0 0 24 24"
+      width={56}
+      height={56}
+      fill={`#${icon.hex}`}
+      aria-hidden="true"
     >
-      <span className="relative text-slate-900/90 transition group-hover:text-slate-950">{name}</span>
-      <span className="pointer-events-none absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-200/0 via-indigo-200/40 to-emerald-200/0 opacity-0 blur-md transition group-hover:opacity-100" />
-    </div>
+      <path d={icon.path} />
+    </svg>
   );
 }
 
 export function AutoScrollingTechMarquee() {
-  const row = [...TECH, ...TECH];
+  const TRACK_DISTANCE = 1600;
+
+
+  console.log("TECH_ICONS", TECH_ICONS.length);
+  console.log("TRACK_DISTANCE", TRACK_DISTANCE);
+
+  console.log("DURATION", 8);
+
 
   return (
     <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/80 p-3 shadow-soft">
@@ -43,18 +88,20 @@ export function AutoScrollingTechMarquee() {
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent" />
 
       <motion.div
-        className="flex w-max gap-3 px-2 py-2"
-        animate={{ x: [0, -TECH.length * 140] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+        className="flex items-center gap-12 whitespace-nowrap"
+        animate={{ x: -1600 }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
       >
-        {row.map((t, idx) => (
-          <div key={`${t}-${idx}`}> <Chip name={t} /> </div>
+        {[...TECH_ICONS, ...TECH_ICONS].map((icon, idx) => (
+          <div
+            key={idx}
+            className="flex h-[56px] w-[56px] items-center justify-center"
+            aria-hidden="true"
+          >
+            <SimpleIconSvg icon={icon} />
+          </div>
         ))}
       </motion.div>
-
-      <div className="mt-4 text-center text-xs text-slate-500">
-        Technologies actively used across our internal systems and client solutions.
-      </div>
     </div>
   );
 }
