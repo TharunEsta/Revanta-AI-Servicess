@@ -70,24 +70,15 @@ function SimpleIconSvg({
 }
 
 export function AutoScrollingTechMarquee() {
-  const DURATION = 8;
-
-  const trackRef = React.useRef<HTMLDivElement | null>(null);
-
-  const scrollWidth =
-    (trackRef.current?.scrollWidth ?? 0) / 2;
-
-
   return (
     <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/80 p-3 shadow-soft">
       <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent" />
 
       <motion.div
-        ref={trackRef}
         className="flex items-center gap-12 whitespace-nowrap"
-        animate={{ x: -scrollWidth }}
-        transition={{ duration: DURATION, repeat: Infinity, ease: "linear" }}
+        animate={{ x: "-50%" }}
+        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
       >
         {[...TECH_ICONS, ...TECH_ICONS].map((icon, idx) => (
           <div
