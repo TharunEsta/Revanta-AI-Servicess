@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/revanta-os/db";
+ import { prisma } from "@/lib/revanta-os/db";
 import { toJsonObject, toJsonValue } from "@/lib/revanta-os/json";
 import { qualifyLeadWithBrain } from "@/lib/revanta-os/ai";
 import { createNotification } from "@/lib/revanta-os/notifications";
@@ -9,6 +9,13 @@ import {
   getCalendlyBookingUrl,
   hasCalendlyMeetingIntent
 } from "@/lib/revanta-os/calendly";
+import {
+  classifyConversationMode,
+  decideFinalMode,
+  formatModeTransitionLog,
+  type ConversationMode
+} from "@/lib/revanta-os/whatsapp-personality";
+
 
 export function normalizePhone(input: string) {
   return input.replace(/[^\d+]/g, "");
@@ -770,9 +777,10 @@ async function storeOutgoingWhatsAppMessage(params: {
 async function sendWhatsAppInteractiveMessage(params: {
   organizationId: string;
   conversationId: string;
-  payload: any;
+  payload: unknown;
   metadata?: Record<string, unknown> | null;
 }) {
+
   const integration = await prisma.whatsAppIntegration.findUnique({
     where: { organizationId: params.organizationId }
   });
@@ -802,11 +810,17 @@ async function sendWhatsAppInteractiveMessage(params: {
     throw new Error("Conversation does not have a WhatsApp recipient phone number.");
   }
 
+  const payloadBase = typeof params.payload === "object" && params.payload !== null ? params.payload : {};
+
   const payload = {
-    ...params.payload,
+    ...(payloadBase as Record<string, unknown>),
     messaging_product: "whatsapp",
     to: recipientPhone
+  } as Record<string, unknown> & {
+    interactive?: { body?: { text?: string } };
   };
+
+
 
   const stored = await storeOutgoingWhatsAppMessage({
     organizationId: params.organizationId,
@@ -936,7 +950,16 @@ type ConversationEngineMetadata = {
   featuresAnswer: string | null;
   referenceAnswer: string | null;
   lastBotInteraction: string;
+  // Tone mode for WhatsApp personality.
+  // Persisted in prisma.conversation.metadata.
+  mode?: ConversationMode;
+
+  // Preferred address token detected from user messages (e.g. "bro", "sir", "anna").
+  // Persisted in prisma.conversation.metadata.
+  preferredAddress?: string | null;
 };
+
+
 
 const CONVERSATION_FLOW_STATES: ConversationFlowStep[] = [
   "SERVICE_SELECTION",
@@ -965,6 +988,11 @@ function normalizeConversationMetadata(metadata: unknown): ConversationEngineMet
       ? (value.flowStep as ConversationFlowStep)
       : "SERVICE_SELECTION";
 
+  const mode =
+    value.mode === "PERSONAL" || value.mode === "BUSINESS" || value.mode === "MIXED"
+      ? (value.mode as ConversationMode)
+      : undefined;
+
   return {
     flowStep,
     selectedService: typeof value.selectedService === "string" ? value.selectedService : null,
@@ -977,9 +1005,11 @@ function normalizeConversationMetadata(metadata: unknown): ConversationEngineMet
     lastQuestionAsked: typeof value.lastQuestionAsked === "string" ? value.lastQuestionAsked : null,
     featuresAnswer: typeof value.featuresAnswer === "string" ? value.featuresAnswer : null,
     referenceAnswer: typeof value.referenceAnswer === "string" ? value.referenceAnswer : null,
-    lastBotInteraction: typeof value.lastBotInteraction === "string" ? value.lastBotInteraction : new Date().toISOString()
+    lastBotInteraction: typeof value.lastBotInteraction === "string" ? value.lastBotInteraction : new Date().toISOString(),
+    mode
   };
 }
+
 
 async function persistConversationEngineMetadata(params: {
   organizationId: string;
@@ -1068,33 +1098,110 @@ function buildDiscoveryQuestion(service: string) {
   return "Before we suggest a solution, we need a few details.\n\n1. What business do you run?\n2. What is the biggest challenge today?\n3. What outcome do you expect?";
 }
 
+function toPersonalReply(text: string) {
+  // Keep answers short and WhatsApp-like (Tinglish). Avoid robotic support/sales tone.
+  // If it already looks like a question/prompt, just add a friendly opener.
+  if (!text) return text;
+  const t = text.trim();
+  if (/\bbook\b|\bschedule\b|\bdiscovery\b|\bcall\b|\bdemo\b|\bpricing\b/i.test(t)) {
+    return `Cheppandi bro, okati fix cheddam 😄\n\n${t}`;
+  }
+  if (/\bWould you like\b/i.test(t)) {
+    return `Cheppandi bro 😄 ${t}`;
+  }
+  if (/\bWelcome to\b/i.test(t)) {
+    return t.replace(/Welcome to\s+Revanta AI\.?/i, "Revanta AI ki welcome 😄");
+  }
+  return t.length > 120 ? `${t.slice(0, 115)}… 😄` : `Bro, ${t}`;
+}
+
+function toBusinessReply(text: string) {
+  if (!text) return text;
+  const t = text.trim();
+  // Convert casual text into professional, conversion-oriented phrasing.
+  if (/^Book your slot here:/i.test(t)) {
+    return t.replace(/^Book your slot here:/i, "Please book your slot here:");
+  }
+  if (/^A team member will contact you shortly/i.test(t)) {
+    return "Our team will contact you shortly to schedule the next step.";
+  }
+  if (/^Thank you\./i.test(t)) {
+    return t;
+  }
+  return t.length > 300 ? t.slice(0, 297) + "…" : t;
+}
+
+function toMixedReply(text: string) {
+  if (!text) return text;
+  const t = text.trim();
+  // Friendly opener, then keep content useful.
+  if (/^Book your slot here:/i.test(t)) {
+    return `Sure bro 😄 ${t}`;
+  }
+  if (t.length > 180) return `Hey! ${t.slice(0, 175)}…`;
+  return `Hey bro 😄 ${t}`;
+}
+
+function applyModeStyle(params: {
+  mode: ConversationMode;
+  text: string;
+  preferredAddress?: string | null;
+}) {
+  const t = (params.text ?? "").trim();
+  if (!t) return params.text;
+
+  // BUSINESS: keep professional text; only mirror detected address token.
+  if (params.mode === "BUSINESS") {
+    if (params.preferredAddress) {
+      return `Certainly ${params.preferredAddress}. ${params.text}`;
+    }
+    return params.text;
+  }
+
+  // MIXED/PERSONAL: keep short WhatsApp-ish, mirror user address token if present.
+  const opener = params.preferredAddress ? `Hey ${params.preferredAddress} 😄` : `Hey 😄`;
+  return t.length <= 180 ? `${opener} ${params.text}` : params.text;
+}
+
+
+
 async function sendEngineReply(params: {
   organizationId: string;
   conversationId: string;
   text: string;
   flowStep: string;
   actorId?: string | null;
+  mode?: ConversationMode;
 }) {
+
   await logConversationFlow({
     organizationId: params.organizationId,
     actorId: params.actorId,
     tag: "WA_SEND_MESSAGE",
     conversationId: params.conversationId,
     flowStep: params.flowStep,
-    payload: { text: params.text }
+    payload: { text: params.text, mode: params.mode }
   });
+
+  const styledText = applyModeStyle({
+    mode: (params.mode ?? "PERSONAL") as ConversationMode,
+    text: params.text
+  });
+
 
   return sendWhatsAppTextMessage({
     organizationId: params.organizationId,
     conversationId: params.conversationId,
-    text: params.text,
+    text: styledText,
     metadata: {
       source: "conversation_engine",
       autoReply: true,
-      flowStep: params.flowStep
+      flowStep: params.flowStep,
+      mode: params.mode
     }
   });
 }
+
 
 async function sendServiceSelectionList(params: {
   organizationId: string;
@@ -1187,7 +1294,8 @@ async function finishConversationTurn(params: {
       actorId: params.actorId,
       conversationId: params.conversationId,
       flowStep: params.metadata.flowStep,
-      text: params.text
+      text: params.text,
+      mode: (params.metadata.mode ?? "PERSONAL") as ConversationMode
     });
   }
 
@@ -1219,6 +1327,7 @@ async function runReplacementConversationEngine(params: {
     where: { id: params.conversation.id, organizationId: params.organizationId },
     include: { lead: true }
   });
+
 
   if (!conversation) {
     return { skipped: true, reason: "Conversation not found" };
@@ -1253,6 +1362,48 @@ async function runReplacementConversationEngine(params: {
   const now = new Date().toISOString();
   const metadata = { ...initialMetadata };
   const inboundText = params.inboundBody.trim();
+
+  // --- WhatsApp Tone Mode: classify + persist + log transitions ---
+  const classified = classifyConversationMode({
+    inboundText,
+    currentMode: metadata.mode || null
+  });
+
+  const decided = decideFinalMode({
+    classified: classified.mode,
+    currentMode: metadata.mode || null,
+    lastAssistantMessage: undefined
+  });
+
+  const previousMode: ConversationMode = metadata.mode || "PERSONAL";
+  const finalMode: ConversationMode = decided.finalMode;
+
+  // Safety: Business always wins.
+  const safeFinalMode: ConversationMode =
+    classified.mode === "BUSINESS" ? "BUSINESS" : finalMode;
+
+  if (previousMode !== safeFinalMode) {
+    await writeConversationLog({
+      organizationId: params.organizationId,
+      actorId: params.actorId || null,
+      eventType: "WHATSAPP_MODE_TRANSITION",
+      level: "INFO",
+      message: formatModeTransitionLog({
+        from: previousMode,
+        to: safeFinalMode,
+        reason: `${classified.reason}; ${decided.reason}`
+      }),
+      payload: {
+        from: previousMode,
+        to: safeFinalMode,
+        reason: `${classified.reason}; ${decided.reason}`,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  metadata.mode = safeFinalMode;
+
 
   if (metadata.waitingForUserReply && metadata.nextExpectedState) {
     if (metadata.flowStep === "SERVICE_SELECTION" && metadata.nextExpectedState === "DISCOVERY") {

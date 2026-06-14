@@ -1,9 +1,7 @@
-# TODO
-
-- [ ] Verify marquee implementation in `app/reviews/_components/AutoScrollingTechMarquee.tsx` (track width logic, logo count, duplication strategy)
-- [ ] Update animation to fixed pixel distance (`animate={{ x: -1600 }}`) and keep transition config (duration 8, linear, repeat Infinity)
-- [ ] Add required console logs: `TECH_ICONS.length` and `TRACK_DISTANCE` value
-- [ ] Ensure seamless infinite scrolling remains intact (duplication with `[...TECH_ICONS, ...TECH_ICONS]`)
-- [ ] Keep icons, colors, sizing, and spacing unchanged
-- [ ] Output summary: total logo count, track distance used, duration used, and files modified
+- [ ] Add mode support to lib/revanta-os/whatsapp.ts (metadata.mode persist/restore)
+- [ ] Implement classification + Business-priority + Mixed transition rules using helpers from whatsapp-personality.ts
+- [ ] Log every mode transition with previous/new/reason/timestamp
+- [ ] Adjust only reply phrasing/personality per mode (no workflow decision changes)
+- [ ] Add 20+ deterministic test cases inside lib/revanta-os/whatsapp.ts producing classification + final mode
+- [ ] Run TypeScript build/lint to ensure no type errors
 
