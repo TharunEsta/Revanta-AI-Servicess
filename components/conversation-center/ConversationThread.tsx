@@ -39,14 +39,21 @@ export function ConversationThread({ conversation }: { conversation: Conversatio
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  function formatTime(ts: string | Date | null | undefined) {
+  function formatTime(ts: unknown) {
     if (!ts) return "";
-    const d = typeof ts === "string" ? new Date(ts) : ts;
-    if (!d || typeof (d as Date).getTime !== "function") return "";
-    const t = (d as Date).getTime();
+
+    // serialization-safe timestamp conversion
+    const d =
+      ts instanceof Date
+        ? ts
+        : new Date(String(ts));
+
+    const t = d.getTime();
     if (Number.isNaN(t)) return "";
-    return (d as Date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
+
 
 
   function renderAttachment(att: ConversationAttachment) {

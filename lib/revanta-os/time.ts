@@ -1,16 +1,53 @@
 export const DEFAULT_TIMEZONE = "Asia/Kolkata";
 
-export function formatTimeInKolkata(date: Date) {
+export function safeTimestamp(value: unknown): number {
+  if (!value) return 0;
+
+  try {
+    const d =
+      value instanceof Date
+        ? value
+        : new Date(String(value));
+
+    const t = d.getTime();
+
+    return Number.isNaN(t) ? 0 : t;
+  } catch {
+    return 0;
+  }
+}
+
+function safeDate(value: unknown): Date | null {
+  if (!value) return null;
+
+  try {
+    const d =
+      value instanceof Date
+        ? value
+        : new Date(String(value));
+
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : d;
+  } catch {
+    return null;
+  }
+}
+
+export function formatTimeInKolkata(value: unknown) {
+  const d = safeDate(value);
+  if (!d) return "";
+
   return new Intl.DateTimeFormat("en-IN", {
     timeZone: DEFAULT_TIMEZONE,
     hour: "2-digit",
     minute: "2-digit",
     hour12: true
-  }).format(date);
+  }).format(d);
 }
 
-export function formatDayGroupInKolkata(date: Date) {
-  const d = new Date(date);
+export function formatDayGroupInKolkata(value: unknown) {
+  const d = safeDate(value);
+  if (!d) return "";
 
   const now = new Date();
   const nowStr = new Intl.DateTimeFormat("en-IN", {
@@ -44,4 +81,5 @@ export function formatDayGroupInKolkata(date: Date) {
     month: "short"
   }).format(d);
 }
+
 

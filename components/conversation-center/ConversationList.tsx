@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui";
-import { formatTimeInKolkata } from "@/lib/revanta-os/time";
+import { formatTimeInKolkata, safeTimestamp } from "@/lib/revanta-os/time";
+
 
 export type ConversationListItem = {
   id: string;
@@ -53,15 +54,8 @@ export function ConversationListClient({
         };
       })
       .sort((a, b) => {
-        function toTimestamp(value: unknown): number {
-          if (!value) return 0;
+        return safeTimestamp(b._lastActivityAt) - safeTimestamp(a._lastActivityAt);
 
-          const d = value instanceof Date ? value : new Date(String(value));
-          const t = d.getTime();
-          return Number.isNaN(t) ? 0 : t;
-        }
-
-        return toTimestamp(b._lastActivityAt) - toTimestamp(a._lastActivityAt);
       });
   }, [conversations]);
 
@@ -87,11 +81,8 @@ export function ConversationListClient({
                 ? new Date(String(c._lastActivityAt))
                 : null;
 
-          const lastActivityAt =
-            normalizedLastActivityAt &&
-            !Number.isNaN(normalizedLastActivityAt.getTime())
-              ? formatTimeInKolkata(normalizedLastActivityAt)
-              : "";
+          const lastActivityAt = formatTimeInKolkata(normalizedLastActivityAt);
+
 
 
           const score = c.lead?.score ?? null;
