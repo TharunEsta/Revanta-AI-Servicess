@@ -1,7 +1,23 @@
-- [ ] Add mode support to lib/revanta-os/whatsapp.ts (metadata.mode persist/restore)
-- [ ] Implement classification + Business-priority + Mixed transition rules using helpers from whatsapp-personality.ts
-- [ ] Log every mode transition with previous/new/reason/timestamp
-- [ ] Adjust only reply phrasing/personality per mode (no workflow decision changes)
-- [ ] Add 20+ deterministic test cases inside lib/revanta-os/whatsapp.ts producing classification + final mode
-- [ ] Run TypeScript build/lint to ensure no type errors
+# TODO - ConversationListClient audit & safe comparator fix
+
+- [ ] Audit data flow for ConversationListClient fields:
+  - [ ] _lastActivityAt
+  - [ ] createdAt
+  - [ ] sentAt
+  - [ ] deliveredAt
+  - [ ] readAt
+  - [ ] Determine database type, server runtime type, client runtime type
+- [ ] Replace ConversationListClient sort comparator with serialization-safe helper `toTimestamp`.
+- [ ] Modify file `components/conversation-center/ConversationList.tsx` accordingly.
+- [ ] Delete build artifacts:
+  - [ ] rm -rf .next
+  - [ ] rm -rf .next-build
+- [ ] Rebuild: `npm run build`
+- [ ] Restart PM2: `pm2 restart revanta-os`
+- [ ] Provide outputs:
+  - [ ] Files Modified
+  - [ ] Date Fields Audited
+  - [ ] Build Status
+  - [ ] PM2 Restart Status
+  - [ ] Remaining Runtime Errors
 

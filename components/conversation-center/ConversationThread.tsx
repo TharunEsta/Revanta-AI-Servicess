@@ -39,11 +39,15 @@ export function ConversationThread({ conversation }: { conversation: Conversatio
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  function formatTime(ts: string | Date) {
+  function formatTime(ts: string | Date | null | undefined) {
+    if (!ts) return "";
     const d = typeof ts === "string" ? new Date(ts) : ts;
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (!d || typeof (d as Date).getTime !== "function") return "";
+    const t = (d as Date).getTime();
+    if (Number.isNaN(t)) return "";
+    return (d as Date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
+
 
   function renderAttachment(att: ConversationAttachment) {
     if (!att.url) return null;

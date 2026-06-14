@@ -53,9 +53,15 @@ export function ConversationListClient({
         };
       })
       .sort((a, b) => {
-        const aAt = (a._lastActivityAt as Date | null)?.getTime?.() ?? 0;
-        const bAt = (b._lastActivityAt as Date | null)?.getTime?.() ?? 0;
-        return bAt - aAt;
+        function toTimestamp(value: unknown): number {
+          if (!value) return 0;
+
+          const d = value instanceof Date ? value : new Date(String(value));
+          const t = d.getTime();
+          return Number.isNaN(t) ? 0 : t;
+        }
+
+        return toTimestamp(b._lastActivityAt) - toTimestamp(a._lastActivityAt);
       });
   }, [conversations]);
 
@@ -74,7 +80,19 @@ export function ConversationListClient({
           const phone = c.lead?.phone || c.contact?.phone || "—";
           const company = c.company?.name || c.lead?.companyName || "—";
           const lastMsg = c._lastMessage?.body || "";
-          const lastActivityAt = c._lastActivityAt ? formatTimeInKolkata(c._lastActivityAt) : "";
+          const normalizedLastActivityAt =
+            c._lastActivityAt instanceof Date
+              ? c._lastActivityAt
+              : c._lastActivityAt
+                ? new Date(String(c._lastActivityAt))
+                : null;
+
+          const lastActivityAt =
+            normalizedLastActivityAt &&
+            !Number.isNaN(normalizedLastActivityAt.getTime())
+              ? formatTimeInKolkata(normalizedLastActivityAt)
+              : "";
+
 
           const score = c.lead?.score ?? null;
           const stage = c.lead?.status ?? null;
