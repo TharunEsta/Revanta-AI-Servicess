@@ -18,9 +18,10 @@ type ConversationMessage = {
   id: string;
   sender: Sender;
   text?: string | null;
-  timestamp: string | Date;
+  timestamp?: string | Date | null;
   attachments?: ConversationAttachment[] | null;
 };
+
 
 type Conversation = {
   id: string;
