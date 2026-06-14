@@ -60,10 +60,8 @@ export default async function ConversationsPage({
         <ConversationListClient
           conversations={conversations as any}
           openedConversationId={opened?.id ?? null}
-          onOpen={(id) => {
-            // handled inside ConversationListClient
-          }}
         />
+
 
 
 

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+
 import { Card } from "@/components/ui";
 import { formatTimeInKolkata } from "@/lib/revanta-os/time";
 
@@ -30,14 +31,15 @@ export type ConversationListItem = {
 
 export function ConversationListClient({
   conversations,
-  openedConversationId,
-  onOpen
+  openedConversationId
 }: {
   conversations: ConversationListItem[];
   openedConversationId: string | null;
-  onOpen: (id: string) => void;
 }) {
+  const router = useRouter();
+
   const items = useMemo(() => {
+
     return conversations
       .map((c) => {
         const lastMessage = c.messages[0] || null;
@@ -91,16 +93,18 @@ export function ConversationListClient({
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  // WhatsApp-style navigation: update URL immediately
-                  const next = `/dashboard/conversations?conversationId=${encodeURIComponent(c.id)}`;
-                  // if consumer passed onOpen, call it too
-                  onOpen(c.id);
-                  window.history.pushState({}, "", next);
-                  window.dispatchEvent(new Event("popstate"));
+                  router.push(
+                    `/dashboard/conversations?conversationId=${encodeURIComponent(c.id)}`
+                  );
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") onOpen(c.id);
+                  if (e.key === "Enter" || e.key === " ") {
+                    router.push(
+                      `/dashboard/conversations?conversationId=${encodeURIComponent(c.id)}`
+                    );
+                  }
                 }}
+
               >
 
                 <div className="min-w-0 flex-1">
