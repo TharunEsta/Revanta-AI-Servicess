@@ -86,10 +86,22 @@ export default async function ConversationsPage({
                   company: opened.company,
                   contact: opened.contact,
                   assignedTo: opened.assignedTo,
-                  messages: opened.messages
+                  messages: opened.messages.map((message: any) => ({
+                    id: message.id,
+                    sender: message.direction,
+                    text: message.body,
+                    timestamp:
+                      message.readAt ??
+                      message.deliveredAt ??
+                      message.sentAt ??
+                      message.createdAt ??
+                      null,
+                    attachments: message.attachments ?? []
+                  }))
                 } as any)
               : null}
           />
+
         </div>
 
         {/* RIGHT PANEL */}
