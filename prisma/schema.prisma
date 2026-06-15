@@ -586,7 +586,10 @@ model Deal {
 
 model Conversation {
   id             String             @id @default(cuid())
+
   organizationId String
+  requirementsSummary RequirementsSummary?
+
   leadId         String?
   companyId      String?
   contactId      String?
@@ -612,6 +615,9 @@ model Conversation {
   assignedTo     User?              @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   messages       Message[]
   attachments    Attachment[]
+  assets         ConversationAsset[]
+
+
   supportTickets SupportTicket[]
   conversationReminders ConversationReminder[]
 
@@ -620,8 +626,26 @@ model Conversation {
 }
 
 
+model ConversationAsset {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messageId      String?
+  message        Message?     @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  assetType      String
+  title          String?
+  url            String
+  mimeType       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([messageId])
+}
+
 model Message {
   id             String           @id @default(cuid())
+  conversationAssets ConversationAsset[]
   organizationId String
   conversationId String
   leadId         String?
@@ -1512,7 +1536,19 @@ model AuditLog {
   @@index([organizationId, action])
 }
 
+model RequirementsSummary {
+  id String @id @default(cuid())
+  conversationId String @unique
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+
+  summary Json
+  lastUpdatedAt DateTime @updatedAt
+}
+
 model ConversationReminder {
+
   id             String    @id @default(cuid())
   organizationId String
   conversationId String

@@ -86,7 +86,7 @@ export default async function ConversationsPage({
                   company: opened.company,
                   contact: opened.contact,
                   assignedTo: opened.assignedTo,
-                  messages: opened.messages.map((message: any) => ({
+                  messages: (opened.messages ?? []).map((message: any) => ({
                     id: message.id,
                     sender: message.direction,
                     text: message.body,
@@ -119,4 +119,3 @@ export default async function ConversationsPage({
     </div>
   );
 }
-

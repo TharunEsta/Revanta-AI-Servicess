@@ -90,22 +90,19 @@ export async function POST(request: NextRequest) {
 
       console.log("[WA_WEBHOOK_VALUE]", {
         phoneNumberId: value.metadata?.phone_number_id,
+        businessAccountId: entry.id || null,
         messageCount: value.messages?.length ?? 0,
         statusCount: value.statuses?.length ?? 0
       });
 
       const phoneNumberId = value.metadata?.phone_number_id || null;
+      const businessAccountId = entry.id || null;
 
       if (!phoneNumberId) {
         continue;
       }
 
-      const organizationId = await resolveOrganizationFromPhoneNumberId(phoneNumberId);
-
-      console.log("[WA_ORG_RESOLVE]", {
-        phoneNumberId,
-        organizationId
-      });
+      const organizationId = await resolveOrganizationFromPhoneNumberId(phoneNumberId, businessAccountId);
 
       if (!organizationId) {
         continue;

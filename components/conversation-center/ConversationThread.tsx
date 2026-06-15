@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { ConversationHumanComposer } from "@/components/conversation-human-composer";
+import { safeTimestamp } from "@/lib/revanta-os/time";
 
 type Sender = "INBOUND" | "OUTBOUND";
 
@@ -41,16 +42,10 @@ export function ConversationThread({ conversation }: { conversation: Conversatio
   }, [messages.length]);
 
   function formatTime(ts: unknown) {
-    if (!ts) return "";
+    const timestamp = safeTimestamp(ts);
+    if (!timestamp) return "";
 
-    // serialization-safe timestamp conversion
-    const d =
-      ts instanceof Date
-        ? ts
-        : new Date(String(ts));
-
-    const t = d.getTime();
-    if (Number.isNaN(t)) return "";
+    const d = new Date(timestamp);
 
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }

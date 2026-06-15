@@ -50,7 +50,7 @@ export function ConversationListClient({
         return {
           ...c,
           _lastMessage: lastMessage,
-          _lastActivityAt: lastActivityAt
+          _lastActivityAt: lastActivityAt ?? null
         };
       })
       .sort((a, b) => {
@@ -74,14 +74,7 @@ export function ConversationListClient({
           const phone = c.lead?.phone || c.contact?.phone || "—";
           const company = c.company?.name || c.lead?.companyName || "—";
           const lastMsg = c._lastMessage?.body || "";
-          const normalizedLastActivityAt =
-            c._lastActivityAt instanceof Date
-              ? c._lastActivityAt
-              : c._lastActivityAt
-                ? new Date(String(c._lastActivityAt))
-                : null;
-
-          const lastActivityAt = formatTimeInKolkata(normalizedLastActivityAt);
+          const lastActivityAt = formatTimeInKolkata(c._lastActivityAt);
 
 
 
