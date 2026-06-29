@@ -4,14 +4,12 @@ const socialLinks = [
   {
     label: "WhatsApp",
     href: "https://wa.me/919014719422",
-    icon: siWhatsapp,
-    external: true
+    icon: siWhatsapp
   },
   {
     label: "Instagram",
     href: "https://www.instagram.com/revanta_ai?igsh=MWJoYnNtcmNqeGNrMA%3D%3D&utm_source=qr",
-    icon: siInstagram,
-    external: true
+    icon: siInstagram
   },
   {
     label: "Mail",
@@ -36,7 +34,9 @@ export function FloatingSocialLinks() {
           const sharedClassName =
             "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-950";
 
-          return item.external ? (
+          const isExternal = item.href.startsWith("http");
+
+          return isExternal ? (
             <a
               key={item.label}
               href={item.href}
