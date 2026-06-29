@@ -34,7 +34,6 @@ export const siteConfig = {
 };
 
 export const navigation = [
-  { label: "Revanta OS", href: "/revanta-os" },
   { label: "Services", href: "/services" },
   { label: "About", href: "/about" },
   { label: "Case Studies", href: "/case-studies" },

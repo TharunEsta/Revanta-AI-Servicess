@@ -1,10 +1,8 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { buildMetadata } from "@/lib/seo";
 import { PageHero } from "@/components/ui";
 import { AnimatedBackground } from "./_components/AnimatedBackground";
 import { Card } from "@/components/ui";
-import { SectionIntro } from "@/components/ui";
 import { TrustCounters } from "./_components/TrustCounters";
 import { CtaBanner } from "@/components/ui";
 import { AutoScrollingTechMarquee } from "./_components/AutoScrollingTechMarquee";
@@ -12,7 +10,7 @@ import { AutoScrollingTechMarquee } from "./_components/AutoScrollingTechMarquee
 export const metadata = buildMetadata({
   title: "Reviews & Trust Center",
   description:
-    "Credibility and transparency from Revanta AI: trusted technology stack, operational experience, and development standards.",
+    "Credibility and transparency from Revanta AI: operational experience and development standards.",
   path: "/reviews"
 });
 
@@ -142,11 +140,11 @@ export default function ReviewsPage() {
       <div className="relative">
         <AnimatedBackground />
         <PageHero
-          eyebrow="Trusted Technology Stack"
+          eyebrow="Reviews"
           title="Why Businesses Choose Revanta AI"
-          description="Building AI-powered CRM systems, automation platforms, business software, and intelligent digital solutions using world-class technologies."
+          description="Building AI-powered CRM systems, automation platforms, business software, and intelligent digital solutions."
           primaryCta={{ label: "Talk to Our Team", href: "/contact" }}
-          secondaryCta={{ label: "View Our Platform", href: "/revanta-os" }}
+          secondaryCta={{ label: "View Services", href: "/services" }}
         />
 
         <div className="-mt-10 sm:-mt-12">
@@ -176,20 +174,12 @@ export default function ReviewsPage() {
           </div>
 
           <div className="mt-10">
-            {/* Single source of truth for technology logos */}
             <AutoScrollingTechMarquee />
           </div>
         </div>
       </section>
 
       <SectionDivider />
-
-
-
-
-
-
-
 
       <CtaBanner />
 

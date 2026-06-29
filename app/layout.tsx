@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { FloatingSocialLinks } from "@/components/floating-social-links";
 import { StructuredData } from "@/components/structured-data";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { siteConfig } from "@/content/site";
@@ -57,6 +58,7 @@ export default function RootLayout({
         <StructuredData data={organizationSchema()} />
         <StructuredData data={websiteSchema()} />
         <SiteHeader />
+        <FloatingSocialLinks />
         {children}
         <SiteFooter />
       </body>

@@ -8,7 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/about",
-    "/revanta-os",
     "/services",
     "/domain",
     // Private RevOps routes removed from sitemap indexing.

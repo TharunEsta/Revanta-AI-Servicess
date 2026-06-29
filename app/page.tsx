@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
 import { PageHero } from "@/components/ui";
-import { TechnologyStackLogoGrid } from "@/components/TechnologyStackLogoGrid";
 
 export const metadata = buildMetadata({
   title: "Automate Bookings, Leads and Operations in Days",
@@ -18,7 +17,7 @@ export default function HomePage() {
         title="We build and operate CRM, automation and business systems"
         description="Revanta AI runs operational software: CRM systems, WhatsApp automation, internal dashboards, AI workflows, and booking flows."
         primaryCta={{ label: "Book Consultation", href: "/contact" }}
-        secondaryCta={{ label: "View Our Platform", href: "/revanta-os" }}
+        secondaryCta={{ label: "View Services", href: "/services" }}
       />
 
       <section className="section pb-10 pt-10">
@@ -50,8 +49,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <TechnologyStackLogoGrid />
 
       <section className="section pb-10 pt-10">
         <div className="shell">
@@ -118,6 +115,5 @@ export default function HomePage() {
     </main>
   );
 }
-
 
 
