@@ -35,6 +35,7 @@ export const siteConfig = {
 
 export const navigation = [
   { label: "Services", href: "/services" },
+  { label: "PawOS", href: "https://pawos.revantaai.com" },
   { label: "About", href: "/about" },
   { label: "Case Studies", href: "/case-studies" },
   { label: "Reviews", href: "/reviews" },
