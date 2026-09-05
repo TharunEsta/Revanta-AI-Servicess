@@ -295,6 +295,13 @@ model Organization {
   whatsappTemplates  WhatsAppTemplate[]
   analytics          Analytics[]
   auditLogs          AuditLog[]
+  jobs               Job[]
+  jobApplications    JobApplication[]
+  assessments        Assessment[]
+  assessmentQuestions AssessmentQuestion[]
+  assessmentResponses AssessmentResponse[]
+  proctoringEvents   ProctoringEvent[]
+  applicationAttachments ApplicationAttachment[]
 
   @@index([createdAt])
 }
@@ -1572,5 +1579,198 @@ model ConversationReminder {
 
   // Prevent duplicate pending reminders per conversation + type
   @@unique([conversationId, reminderType], map: "ConversationReminder_pending_unique_idx")
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  NEW
+  UNDER_REVIEW
+  SHORTLISTED
+  ASSESSMENT
+  INTERVIEW
+  SELECTED
+  REJECTED
+}
+
+enum AssessmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+}
+
+enum QuestionType {
+  MCQ
+  CODING
+}
+
+model Job {
+  id                 String      @id @default(cuid())
+  organizationId     String
+  title              String
+  description        String?
+  employmentType     String      @default("Internship")
+  status             JobStatus   @default(OPEN)
+  eligibleDegrees    String[]    @default(["B.Tech"])
+  eligibleSpecializations String[] @default(["AI & DS", "AI & ML", "AI & CSE"])
+  eligibleGraduationYears Int[]   @default([2027, 2028])
+  technologies       String[]
+  benefits          Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applications       JobApplication[]
+  assessments        Assessment[]
+
+  @@index([organizationId, status])
+}
+
+model JobApplication {
+  id                     String      @id @default(cuid())
+  organizationId         String
+  jobId                  String
+  fullName               String
+  email                  String
+  phone                  String
+  city                   String
+  state                  String
+  degree                 String
+  specialization         String
+  graduationYear         Int
+  primaryInterest        String
+  technologiesKnown      String[]
+  githubUrl              String?
+  linkedinUrl            String?
+  portfolioUrl           String?
+  hasProjects            Boolean     @default(false)
+  projectName            String?
+  projectDescription     String?
+  projectTechnologies    String[]
+  projectUrl             String?
+  projectGithubUrl       String?
+  availableStartDate     DateTime?
+  hoursPerWeek           Int?
+  motivation             String?
+  learningGoals          String?
+  resumeUrl              String?
+  declarationAccepted    Boolean     @default(false)
+  status                 ApplicationStatus @default(NEW)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job                    Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  assessment             Assessment?
+
+  @@unique([email, jobId])
+  @@index([organizationId, jobId])
+  @@index([organizationId, status])
+  @@index([organizationId, email])
+}
+
+model Assessment {
+  id                 String           @id @default(cuid())
+  organizationId     String
+  jobId              String
+  applicationId      String           @unique
+  status             AssessmentStatus @default(NOT_STARTED)
+  startedAt          DateTime?
+  submittedAt        DateTime?
+  score              Int?
+  totalScore         Int?
+  flagCount          Int              @default(0)
+  integrityStatus    String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job                Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  application        JobApplication   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  responses          AssessmentResponse[]
+  proctoringEvents   ProctoringEvent[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, jobId])
+}
+
+model AssessmentQuestion {
+  id                 String      @id @default(cuid())
+  organizationId     String
+  jobId              String
+  type               QuestionType
+  sectionNumber      Int
+  questionNumber     Int
+  prompt             String
+  timeLimit          Int         @default(60)
+  options            String[]
+  correctAnswer      String?
+  codeTemplate       String?
+  testCases          Json?
+  points             Int         @default(1)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  responses          AssessmentResponse[]
+
+  @@index([organizationId, jobId])
+  @@index([jobId, sectionNumber, questionNumber])
+}
+
+model AssessmentResponse {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  assessmentId       String
+  questionId         String
+  answerText         String?
+  answerCode         String?
+  testResults        Json?
+  isCorrect          Boolean?
+  pointsEarned       Int?
+  timeSpentSeconds   Int
+  flaggedForReview   Boolean      @default(false)
+  flagReason         String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessment         Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question           AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionId])
+  @@index([organizationId, assessmentId])
+}
+
+model ProctoringEvent {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  assessmentId       String
+  eventType          String
+  severity           String       @default("INFO")
+  description        String?
+  metadata           Json?
+  createdAt          DateTime     @default(now())
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessment         Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, assessmentId])
+  @@index([assessmentId, createdAt])
+}
+
+model ApplicationAttachment {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  applicationId      String
+  fileName           String
+  mimeType           String?
+  url                String
+  sizeBytes          Int?
+  attachmentType     String       @default("RESUME")
+  createdAt          DateTime     @default(now())
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, applicationId])
+  @@index([organizationId, attachmentType])
 }
 
