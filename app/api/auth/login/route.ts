@@ -3,22 +3,22 @@ import { createSessionForUser, sessionCookieOptions } from "@/lib/revanta-os/aut
 import { safeJson } from "@/lib/revanta-os/http";
 
 export async function POST(request: NextRequest) {
-  const body = await safeJson(request);
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const password = typeof body.password === "string" ? body.password : "";
-
-  if (!email || !password) {
-    return NextResponse.json({ ok: false, error: "Email and password are required." }, { status: 400 });
-  }
-
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
-
-  if (email !== adminEmail || password !== adminPassword) {
-    return NextResponse.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
-  }
-
   try {
+    const body = await safeJson(request);
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    if (!email || !password) {
+      return NextResponse.json({ ok: false, error: "Email and password are required." }, { status: 400 });
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+
+    if (email !== adminEmail || password !== adminPassword) {
+      return NextResponse.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
+    }
+
     const session = await createSessionForUser({
       userId: "admin",
       email: adminEmail || "admin@example.com",
@@ -30,20 +30,22 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.json({
-    ok: true,
-    user: {
-      id: signedUser.id,
-      email: signedUser.email,
-      name: signedUser.name,
-      orgId: membership?.organizationId ?? null
-    }
-  });
-  response.cookies.set("revanta_session", session.token, {
-    ...sessionCookieOptions()
-  });
-  response.cookies.set("revanta_refresh", session.refreshToken, {
-    ...refreshCookieOptions()
-  });
+      ok: true,
+      user: {
+        id: "admin",
+        email: adminEmail,
+        name: "Admin",
+        orgId: null
+      }
+    });
 
-  return response;
+    response.cookies.set("revanta_session", session.token, {
+      ...sessionCookieOptions()
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json({ ok: false, error: "Login failed" }, { status: 500 });
+  }
 }
