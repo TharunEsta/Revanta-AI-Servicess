@@ -121,9 +121,10 @@ function AdminApplicationsPageContent() {
         }
         if (!res.ok) throw new Error('Failed to load applications');
         const data = await res.json();
-        setApplications(data);
+        setApplications(Array.isArray(data) ? data : []);
         setError('');
       } catch (err) {
+        setApplications([]);
         setError('Failed to load applications');
         console.error(err);
       } finally {
