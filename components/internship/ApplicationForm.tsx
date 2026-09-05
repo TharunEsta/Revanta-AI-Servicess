@@ -66,7 +66,7 @@ interface FormErrors {
   [key: string]: string;
 }
 
-export function ApplicationForm() {
+export function ApplicationForm({ isAccepting = true }: { isAccepting?: boolean }) {
   const router = useRouter();
   const [currentSection, setCurrentSection] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -334,6 +334,18 @@ export function ApplicationForm() {
     { title: 'Experience & Availability', fields: ['hasPreviousWork', 'joiningAvailability', 'hoursPerWeek', 'hasPersonalLaptop'] },
     { title: 'Motivation & Resume', fields: ['motivation', 'learningGoals', 'resumeFile', 'declarationAccepted'] }
   ];
+
+  if (!isAccepting) {
+    return (
+      <div className="space-y-8 rounded-lg border border-slate-200 bg-slate-50 p-8">
+        <div className="text-center space-y-4">
+          <h2 className="font-[var(--font-display)] text-2xl font-semibold text-slate-950">Applications Not Being Accepted</h2>
+          <p className="text-slate-600">We have reached our application limit for this internship. Thank you for your interest in RevantaAI!</p>
+          <p className="text-sm text-slate-500">We will open applications again in the future. Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">

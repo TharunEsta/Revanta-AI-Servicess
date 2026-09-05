@@ -1,13 +1,32 @@
-import { buildMetadata } from "@/lib/seo";
+'use client';
+
+import { useEffect, useState } from 'react';
 import { ApplicationForm } from "@/components/internship/ApplicationForm";
 
-export const metadata = buildMetadata({
-  title: "Apply for Software Development Intern",
-  description: "Apply for the Software Development Internship at RevantaAI.",
-  path: "/careers/software-development-intern/apply"
-});
-
 export default function ApplyPage() {
+  const [applicationCount, setApplicationCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/applications/count');
+        if (res.ok) {
+          const data = await res.json();
+          setApplicationCount(data.count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch application count:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCount();
+  }, []);
+
+  const isAccepting = applicationCount === null || applicationCount <= 4;
+
   return (
     <main>
       <section className="section py-12 sm:py-16">
@@ -26,7 +45,22 @@ export default function ApplyPage() {
       <section className="section py-12">
         <div className="shell">
           <div className="mx-auto max-w-2xl">
-            <ApplicationForm />
+            {!isAccepting && (
+              <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-6">
+                <h2 className="font-[var(--font-display)] text-xl font-semibold text-amber-950">
+                  Applications Closed
+                </h2>
+                <p className="mt-2 text-amber-800">
+                  We are no longer accepting applications for this internship at this time. Thank you for your interest!
+                </p>
+              </div>
+            )}
+
+            {loading ? (
+              <p className="text-center text-slate-600">Loading...</p>
+            ) : (
+              <ApplicationForm isAccepting={isAccepting} />
+            )}
           </div>
         </div>
       </section>
