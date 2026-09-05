@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSessionForUser, sessionCookieOptions } from "@/lib/revanta-os/auth";
 import { safeJson } from "@/lib/revanta-os/http";
 
 export async function POST(request: NextRequest) {
@@ -19,28 +18,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
     }
 
-    const session = await createSessionForUser({
-      userId: "admin",
-      email: adminEmail || "admin@example.com",
-      name: "Admin",
-      orgId: null,
-      role: "admin",
-      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || null,
-      userAgent: request.headers.get("user-agent")
-    });
-
     const response = NextResponse.json({
       ok: true,
       user: {
         id: "admin",
         email: adminEmail,
-        name: "Admin",
-        orgId: null
+        name: "Admin"
       }
     });
 
-    response.cookies.set("revanta_session", session.token, {
-      ...sessionCookieOptions()
+    response.cookies.set("revanta_session", "admin-session-token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60
     });
 
     return response;
