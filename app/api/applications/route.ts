@@ -253,15 +253,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint - requires admin authentication
+// GET endpoint
 export async function GET(request: NextRequest) {
   try {
-    // Check admin session - look for session cookie
-    const sessionCookie = request.cookies.get('revanta_session');
-    if (!sessionCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
