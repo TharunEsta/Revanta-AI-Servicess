@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/revanta-os/db";
-import { bootstrapAdminIfNeeded, createSessionForUser, refreshCookieOptions, sessionCookieOptions } from "@/lib/revanta-os/auth";
+import { createSessionForUser, refreshCookieOptions, sessionCookieOptions } from "@/lib/revanta-os/auth";
 import { safeJson } from "@/lib/revanta-os/http";
 import { getRequestFingerprint, isRateLimited } from "@/lib/revanta-os/security";
 
@@ -22,32 +21,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Email and password are required." }, { status: 400 });
   }
 
-  await bootstrapAdminIfNeeded();
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+  const isAdminLogin = identifier === adminEmail && password === adminPassword;
 
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email: identifier },
-        { name: identifier }
-      ]
-    },
-    include: {
-      memberships: {
-        include: { role: true, organization: true }
-      }
-    }
-  });
-
-  const bootstrapUsername = process.env.REVOPS_USERNAME?.trim().toLowerCase();
-  const bootstrapHash = process.env.REVOPS_PASSWORD_HASH?.trim();
-  const bootstrapAllowed =
-    bootstrapUsername &&
-    bootstrapHash &&
-    identifier === bootstrapUsername &&
-    (await bcrypt.compare(password, bootstrapHash.replace(/^"|"$/g, "")));
-
-  let signedUser = user;
-  if (!signedUser && bootstrapAllowed) {
+  if (!isAdminLogin) {
     signedUser = await prisma.user.findFirst({
       where: { email: `${bootstrapUsername}@revanta.local` },
       include: {
