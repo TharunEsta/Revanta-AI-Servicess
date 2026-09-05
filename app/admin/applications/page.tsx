@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -88,7 +88,7 @@ const ALL_COLUMNS = [
   { key: 'createdAt', label: 'Applied' }
 ];
 
-export default function AdminApplicationsPage() {
+function AdminApplicationsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -350,5 +350,13 @@ export default function AdminApplicationsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AdminApplicationsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 py-12"><div className="shell"><p className="text-center text-slate-600">Loading...</p></div></div>}>
+      <AdminApplicationsPageContent />
+    </Suspense>
   );
 }

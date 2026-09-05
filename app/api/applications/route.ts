@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create application
-    const application = await JobApplication.create({
+    const applicationData = {
       jobId: job._id.toString(),
       fullName,
       email,
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       projectGithubUrl: projectGithubUrl || undefined,
       hasPreviousWork,
       previousWorkExperience: previousWorkExperience || undefined,
-      joiningAvailability,
+      joiningAvailability: joiningAvailability as 'IMMEDIATELY' | 'WITHIN_1_WEEK' | 'WITHIN_2_WEEKS' | 'WITHIN_1_MONTH' | 'MORE_THAN_1_MONTH' | 'SPECIFIC_DATE',
       earliestJoiningDate,
       hoursPerWeek,
       hasPersonalLaptop,
@@ -174,12 +174,13 @@ export async function POST(request: NextRequest) {
       resumeUrl,
       resumeOriginalName,
       declarationAccepted: true,
-      status: 'NEW'
-    });
+      status: 'NEW' as const
+    };
+    const application = await JobApplication.create(applicationData);
 
     // Send admin notification email
     try {
-      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '');
+      emailjs.init({ publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '' });
 
       const adminEmail = process.env.ADMIN_EMAIL || 'admin@revanta-ai.com';
 
@@ -199,22 +200,21 @@ export async function POST(request: NextRequest) {
           specialization: specialization,
           graduation_year: graduationYear,
           cgpa: cgpa || 'Not provided',
-          technologies: technologiesKnown.join(', ') || 'Not provided',
+          technologies: technologiesKnown.map((t: any) => t.name || t).join(', ') || 'Not provided',
           primary_interest: primaryInterest,
           github: githubUrl || 'Not provided',
           linkedin: linkedinUrl || 'Not provided',
           portfolio: portfolioUrl || 'Not provided',
           has_projects: hasProjects ? 'Yes' : 'No',
           project_name: projectName || 'N/A',
-          experience: experience || 'Not provided',
-          certifications: certifications.join(', ') || 'None',
-          availability: availableStartDate ? new Date(availableStartDate).toLocaleDateString() : 'Not specified',
+          has_previous_work: hasPreviousWork ? 'Yes' : 'No',
+          joining_availability: joiningAvailability || 'Not specified',
           hours_per_week: hoursPerWeek || 'Not specified',
           motivation: motivation || 'Not provided',
           learning_goals: learningGoals || 'Not provided',
-          application_id: application._id.toString(),
+          application_id: (application as any)._id?.toString() || 'Unknown',
           submitted_at: new Date().toLocaleString(),
-          admin_link: `${process.env.NEXT_PUBLIC_APP_URL}/admin/applications/${application._id.toString()}`
+          admin_link: `${process.env.NEXT_PUBLIC_APP_URL}/admin/applications/${(application as any)._id?.toString() || ''}`
         }
       );
     } catch (error) {
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
 
     // Send candidate confirmation email
     try {
-      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '');
+      emailjs.init({ publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '' });
 
       await emailjs.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
           subject: 'Application Received — Software Development Intern',
           candidate_name: fullName,
           message_type: 'candidate_confirmation',
-          application_id: application._id.toString(),
+          application_id: (application as any)._id?.toString() || 'Unknown',
           position: 'Software Development Intern'
         }
       );
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      applicationId: application._id.toString(),
+      applicationId: (application as any)._id?.toString() || 'Unknown',
       message: 'Application submitted successfully'
     }, { status: 201 });
 

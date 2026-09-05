@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-export async function GET(request: NextRequest, { params }: { params: { filename: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ filename: string }> }) {
   try {
     // Check if user has admin session
     const sessionCookie = request.cookies.get('revanta_session');
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: { filename
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { filename } = params;
+    const { filename } = await params;
 
     // Security: prevent directory traversal
     if (filename.includes('..') || filename.includes('/')) {
