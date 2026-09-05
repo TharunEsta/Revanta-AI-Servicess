@@ -5,7 +5,7 @@ import { safeJson } from "@/lib/revanta-os/http";
 export async function POST(request: NextRequest) {
   try {
     const body = await safeJson(request);
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const email = (typeof body.email === "string" ? body.email : typeof body.identifier === "string" ? body.identifier : "").trim().toLowerCase();
     const password = typeof body.password === "string" ? body.password : "";
 
     if (!email || !password) {
