@@ -7,22 +7,12 @@
     "build": "node scripts/clean-dist.mjs && next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:seed": "prisma db seed"
-  },
-  "prisma": {
-    "seed": "node prisma/seed-runner.cjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@emailjs/nodejs": "^5.0.2",
-    "@prisma/client": "^6.15.0",
-    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.11.0",
     "lucide-react": "^1.14.0",
-    "mongoose": "^9.9.5",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -37,7 +27,6 @@
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
-    "prisma": "^6.15.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2"
   }
