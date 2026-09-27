@@ -9,8 +9,6 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: "/crm-erp-solutions", destination: "/crm-systems", permanent: true },
-      { source: "/crm-erp-system", destination: "/crm-systems", permanent: true },
       { source: "/saas-development", destination: "/web-mobile-development", permanent: true },
       { source: "/mobile-app-development", destination: "/web-mobile-development", permanent: true },
       { source: "/web-development", destination: "/web-mobile-development", permanent: true },
@@ -26,7 +24,6 @@ const nextConfig: NextConfig = {
       { source: "/document-processing-ai", destination: "/ai-automation", permanent: true },
       { source: "/custom-software-development", destination: "/custom-software", permanent: true },
       { source: "/hospital-appointment-system", destination: "/custom-software", permanent: true },
-      { source: "/real-estate-lead-management", destination: "/crm-systems", permanent: true },
       { source: "/domain", destination: "/services", permanent: true },
       { source: "/dashboard/domains", destination: "/services", permanent: true },
       { source: "/dashboard/dns", destination: "/services", permanent: true }

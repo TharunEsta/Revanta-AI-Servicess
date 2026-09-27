@@ -53,7 +53,6 @@ export const SERVICE_CATALOG: ServiceCatalogSection[] = [
     category: "Software",
     services: [
       { name: "SaaS Applications", slug: "saas-applications", description: "Custom SaaS products built around a clear business model.", deliverables: ["Product scope", "Architecture", "Launch plan"] },
-      { name: "CRM Systems", slug: "crm-systems", description: "Lead, deal, and customer systems that fit real workflows.", deliverables: ["Pipeline design", "Automation", "Reporting"] },
       { name: "ERP Systems", slug: "erp-systems", description: "Operations platforms for connected business management.", deliverables: ["Process design", "Modules", "Role controls"] },
       { name: "Web Applications", slug: "web-applications", description: "Modern web apps for internal teams and customer experiences.", deliverables: ["UI/UX", "Backend", "Deployment"] },
       { name: "Mobile Applications", slug: "mobile-applications", description: "Mobile products for customer or field team use.", deliverables: ["App flow", "Build", "Release support"] }
@@ -128,7 +127,6 @@ function inferServiceType(input: string) {
   const value = input.toLowerCase();
   if (value.includes("whatsapp")) return "WhatsApp Automation";
   if (value.includes("voice")) return "Voice AI";
-  if (value.includes("crm")) return "CRM Systems";
   if (value.includes("saas")) return "SaaS Applications";
   if (value.includes("app")) return "Web Applications";
   if (value.includes("website") || value.includes("landing")) return "Websites";

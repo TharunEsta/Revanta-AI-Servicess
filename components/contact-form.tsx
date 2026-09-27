@@ -29,7 +29,7 @@ export function ContactForm() {
             { label: "Mobile App Development", value: "Mobile App Development" },
             { label: "Web Development", value: "Web Development" },
             { label: "Custom Software", value: "Custom Software" },
-            { label: "CRM / ERP Solutions", value: "CRM / ERP Solutions" }
+            { label: "ERP Solutions", value: "ERP Solutions" }
           ],
           required: true
         },
