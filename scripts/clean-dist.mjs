@@ -1,3 +1,3 @@
 import { rmSync } from "node:fs";
 
-rmSync(".next-build", { recursive: true, force: true });
+rmSync(".next", { recursive: true, force: true });
