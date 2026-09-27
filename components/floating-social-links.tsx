@@ -28,7 +28,7 @@ function SocialIcon({ icon }: { icon: { path: string; hex: string } }) {
 
 export function FloatingSocialLinks() {
   return (
-    <div className="hidden fixed right-4 top-1/2 z-50 -translate-y-1/2 md:right-6 md:block">
+    <div className="fixed right-4 bottom-4 z-50 md:right-6 md:top-1/2 md:bottom-auto md:-translate-y-1/2">
       <div className="flex flex-col gap-3">
         {socialLinks.map((item) => {
           const sharedClassName =
