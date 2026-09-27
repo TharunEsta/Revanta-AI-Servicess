@@ -28,8 +28,8 @@ function SocialIcon({ icon }: { icon: { path: string; hex: string } }) {
 
 export function FloatingSocialLinks() {
   return (
-    <div className="fixed right-4 top-1/2 z-50 -translate-y-1/2 md:right-6">
-      <div className="flex flex-row flex-wrap justify-end gap-3 md:flex-col">
+    <div className="hidden fixed right-4 top-1/2 z-50 -translate-y-1/2 md:right-6 md:block">
+      <div className="flex flex-col gap-3">
         {socialLinks.map((item) => {
           const sharedClassName =
             "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-950";
